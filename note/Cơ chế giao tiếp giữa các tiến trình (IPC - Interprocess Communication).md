@@ -1,7 +1,0 @@
-- Do mỗi tiến trình có  Virtual adress memory cô lập , do vậy để trao đổi thông tin chúng cần sử dụng cơ chế IPC 
-- Cơ chế chuyển giao dữ liệu ( Data-transfer ) - Đọc có tính chất triệt tiêu
-	- Ý tưởng chung : Dữ liệu k đi thẳng qua từ A sang B , nó đi từ A -> kernel ( buffer tạm ) rồi sang B , và sau khi đọc dữ liệu đó trong buffer sẽ bị mất . Giống như việc lấy thư ra khỏi hộp thư 
-	- a) Pipes & FiFOs - Ống dẫn nước , k có phân cách giữa các message 
-	- b) Message Queues — "Hộp thư có nhãn dán" :Hộp thư có nhãn dán và độ ưu tiên 
-	- c ) Socket : dùng khi chung cho 1 máy , gửi thẳng  1 File descriptor từ tiến trình này sang tiến trình khác 
-- Shared Memory : 2 tiến trình cùng đọc ghi cùng vào RAM / CPU  , phải thêm semorphone ( công cụ đồng bộ ) và Mutex ( khóa)
