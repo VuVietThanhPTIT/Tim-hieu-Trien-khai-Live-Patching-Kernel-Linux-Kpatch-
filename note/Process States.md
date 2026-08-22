@@ -1,0 +1,8 @@
+**New** (Mới tạo), **Ready** (Sẵn sàng chạy), **Running** (Đang chạy trên CPU), **Blocked/Waiting** (Bị chặn/Chờ sự kiện), và **Exit** (Kết thúc)
+- Đối với linux : trạng thái bị chặn được chia thành các trạng thái đặc thù 
+	- - **Running (R):** Tiến trình đang được CPU thực thi hoặc đã sẵn sàng trong hàng đợi để được điều phối chạy.
+	- **Interruptible Sleeping (TASK_INTERRUPTIBLE / S):** Tiến trình đang ngủ (bị chặn) để chờ một sự kiện hoặc tài nguyên (ví dụ: chờ người dùng gõ phím, chờ dữ liệu từ mạng). Trạng thái này có thể bị đánh thức bất cứ lúc nào nếu có một **Signal (tín hiệu)** gửi tới nó.
+	- **Uninterruptible Sleeping (TASK_UNINTERRUPTIBLE / D):** Tiến trình đang ngủ sâu để chờ một tác vụ phần cứng trực tiếp (ví dụ: chờ ổ đĩa quay xong để đọc dữ liệu). Trong trạng thái này, tiến trình **không thể bị ngắt bởi bất kỳ Signal nào**, kể cả "viên đạn bạc" `SIGKILL`. Nó chỉ thức dậy khi phần cứng hoàn thành tác vụ.
+	- **Stopped (T):** Tiến trình bị tạm dừng thực thi, thường là do nhận được tín hiệu điều khiển tác vụ (như nhấn `Ctrl+Z` gửi tín hiệu `SIGTSTP`) hoặc khi đang bị kiểm thử (debug).
+	- **Zombie (defunct / Z):** Tiến trình đã kết thúc thực thi (gọi hàm `exit`) nhưng cấu trúc quản lý (`task_struct`) của nó vẫn bị giữ lại trong bảng tiến trình của kernel. Mục đích là để tiến trình cha có thể đọc được mã thoát (exit status) của nó qua hàm `wait()`. Tiến trình Zombie đã chết nên **không thể bị giết một lần nữa bằng Signal**. Nếu tiến trình cha "bỏ quên" không dọn dẹp Zombie, hệ thống sẽ bị rác bảng tiến trình
+- 
