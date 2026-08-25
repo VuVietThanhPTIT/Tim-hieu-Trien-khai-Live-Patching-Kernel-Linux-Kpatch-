@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="560" viewBox="0 0 1200 560" role="img" aria-labelledby="title desc">
+  <title id="title">Bản đồ thành phần kpatch</title>
+  <desc id="desc">Từ source patch qua kpatch-build, livepatch module, Linux livepatch core và dynamic ftrace.</desc>
+  <defs>
+    <style>
+      text{font-family:Arial,'DejaVu Sans',sans-serif;fill:#303030}.title{font-size:31px;font-weight:700}.h{font-size:19px;font-weight:700}.s{font-size:15px}.panel{fill:#fffef0;stroke:#8b5cf6;stroke-width:2}.box{fill:#f0efff;stroke:#8b5cf6;stroke-width:2}.core{fill:#eaf7ec;stroke:#568d60;stroke-width:2}.trace{fill:#fff5dd;stroke:#bc9135;stroke-width:2}.line{fill:none;stroke:#333333;stroke-width:2.5}.arrow{fill:#333333}
+    </style>
+  </defs>
+
+  <rect class="panel" fill="#fffef0" stroke="#8b5cf6" stroke-width="2" x="15" y="15" width="1170" height="530"/>
+  <text class="title" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="31" font-weight="700" x="600" y="58" text-anchor="middle">Từ bản vá CVE tới code mới đang chạy</text>
+
+  <rect class="box" fill="#f0efff" stroke="#8b5cf6" stroke-width="2" x="410" y="85" width="380" height="72"/>
+  <text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="600" y="118" text-anchor="middle">Source patch của CVE</text>
+  <text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="600" y="143" text-anchor="middle">diff/backport cho đúng kernel mục tiêu</text>
+
+  <path class="line" fill="none" stroke="#333333" stroke-width="2.5" d="M600 157 V198"/>
+  <polygon class="arrow" fill="#333333" points="600,198 594,186 606,186"/>
+
+  <rect class="box" fill="#f0efff" stroke="#8b5cf6" stroke-width="2" x="410" y="198" width="380" height="72"/>
+  <text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="600" y="231" text-anchor="middle">kpatch-build</text>
+  <text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="600" y="256" text-anchor="middle">build gốc + build đã sửa, rồi so sánh ELF</text>
+
+  <path class="line" fill="none" stroke="#333333" stroke-width="2.5" d="M600 270 V311"/>
+  <polygon class="arrow" fill="#333333" points="600,311 594,299 606,299"/>
+
+  <rect class="box" fill="#f0efff" stroke="#8b5cf6" stroke-width="2" x="410" y="311" width="380" height="72"/>
+  <text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="600" y="344" text-anchor="middle">Livepatch module (.ko)</text>
+  <text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="600" y="369" text-anchor="middle">code mới + function/object metadata + relocation</text>
+
+  <path class="line" fill="none" stroke="#333333" stroke-width="2.5" d="M600 383 V404 H330 M600 404 H870"/>
+  <path class="line" fill="none" stroke="#333333" stroke-width="2.5" d="M330 404 V435"/>
+  <polygon class="arrow" fill="#333333" points="330,435 324,423 336,423"/>
+  <path class="line" fill="none" stroke="#333333" stroke-width="2.5" d="M870 404 V435"/>
+  <polygon class="arrow" fill="#333333" points="870,435 864,423 876,423"/>
+
+  <rect class="core" fill="#eaf7ec" stroke="#568d60" stroke-width="2" x="120" y="435" width="420" height="88"/>
+  <text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="330" y="470" text-anchor="middle">Linux livepatch core</text>
+  <text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="330" y="495" text-anchor="middle">transition và consistency theo từng task</text>
+
+  <rect class="trace" fill="#fff5dd" stroke="#bc9135" stroke-width="2" x="660" y="435" width="420" height="88"/>
+  <text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="870" y="470" text-anchor="middle">Dynamic ftrace</text>
+  <text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="870" y="495" text-anchor="middle">redirect original function → replacement function</text>
+</svg>

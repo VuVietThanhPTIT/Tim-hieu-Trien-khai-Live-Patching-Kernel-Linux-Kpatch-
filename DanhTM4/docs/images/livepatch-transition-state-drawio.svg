@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1300" height="560" viewBox="0 0 1300 560" role="img" aria-labelledby="title desc">
+  <title id="title">Livepatch transition state theo từng task</title>
+  <desc id="desc">Patch disabled chuyển qua transition, mỗi task đổi từ old sang new khi đạt safe state, rồi patch ổn định.</desc>
+  <defs>
+    <style>text{font-family:'Segoe UI',Arial,sans-serif;fill:#303030}.title{font-size:31px;font-weight:600}.h{font-size:19px;font-weight:600}.s{font-size:15px}.box{fill:#f0efff;stroke:#8b5cf6;stroke-width:2}.panel{fill:#fffef0;stroke:#8b5cf6;stroke-width:2}.old{fill:#fdecec;stroke:#c65a5a;stroke-width:2}.new{fill:#eaf7ec;stroke:#568d60;stroke-width:2}.wait{fill:#fff5dd;stroke:#bc9135;stroke-width:2}.line{fill:none;stroke:#333333;stroke-width:2.5}.arrow{fill:#333333}.pending{fill:none;stroke:#777777;stroke-width:2.5;stroke-dasharray:8 6}</style>
+  </defs>
+  <rect class="panel" fill="#fffef0" stroke="#8b5cf6" stroke-width="2" x="15" y="15" width="1270" height="530"/>
+  <text class="title" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="31" font-weight="700" x="650" y="58" text-anchor="middle">Enable livepatch: task chuyển state tại safe point</text>
+
+  <rect class="old" fill="#fdecec" stroke="#c65a5a" stroke-width="2" x="40" y="205" width="220" height="105"/><text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="150" y="246" text-anchor="middle">Patch disabled</text><text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="150" y="276" text-anchor="middle">enabled = 0</text>
+  <path class="line" fill="none" stroke="#333333" stroke-width="2.5" d="M260 258 H333"/><polygon class="arrow" points="333,258 321,252 321,264"/><text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="295" y="238" text-anchor="middle">enable = 1</text>
+
+  <rect class="box" fill="#f0efff" stroke="#8b5cf6" stroke-width="2" x="333" y="100" width="610" height="335"/><text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="638" y="135" text-anchor="middle">Transition: transition = 1</text>
+  <rect class="old" fill="#fdecec" stroke="#c65a5a" stroke-width="2" x="380" y="166" width="150" height="58"/><text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="455" y="202" text-anchor="middle">Task A: old</text>
+  <path class="line" fill="none" stroke="#333333" stroke-width="2.5" d="M530 195 H723"/><polygon class="arrow" points="723,195 711,189 711,201"/><text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="625" y="178" text-anchor="middle">stack safe</text>
+  <rect class="new" fill="#eaf7ec" stroke="#568d60" stroke-width="2" x="723" y="166" width="170" height="58"/><text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="808" y="202" text-anchor="middle">Task A: new</text>
+
+  <rect class="old" fill="#fdecec" stroke="#c65a5a" stroke-width="2" x="380" y="251" width="150" height="58"/><text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="455" y="287" text-anchor="middle">Task B: old</text>
+  <path class="pending" fill="none" stroke="#777777" stroke-width="2.5" stroke-dasharray="8 6" d="M530 280 H720"/><text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="625" y="263" text-anchor="middle">chưa safe</text>
+  <rect class="wait" fill="#fff5dd" stroke="#bc9135" stroke-width="2" x="723" y="251" width="170" height="58"/><text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="808" y="287" text-anchor="middle">đang chờ</text>
+
+  <rect class="old" fill="#fdecec" stroke="#c65a5a" stroke-width="2" x="380" y="336" width="150" height="58"/><text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="455" y="372" text-anchor="middle">Task C: old</text>
+  <path class="line" fill="none" stroke="#333333" stroke-width="2.5" d="M530 365 H723"/><polygon class="arrow" points="723,365 711,359 711,371"/><text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="625" y="348" text-anchor="middle">kernel exit</text>
+  <rect class="new" fill="#eaf7ec" stroke="#568d60" stroke-width="2" x="723" y="336" width="170" height="58"/><text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="808" y="372" text-anchor="middle">Task C: new</text>
+
+  <path class="line" fill="none" stroke="#333333" stroke-width="2.5" d="M943 258 H1018"/><polygon class="arrow" points="1018,258 1006,252 1006,264"/><text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="979" y="230" text-anchor="middle">mọi task</text><text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="979" y="249" text-anchor="middle">đạt target</text>
+  <rect class="new" fill="#eaf7ec" stroke="#568d60" stroke-width="2" x="1018" y="205" width="240" height="105"/><text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="1138" y="246" text-anchor="middle">Patch enabled</text><text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="1138" y="276" text-anchor="middle">transition = 0</text>
+
+  <rect class="wait" fill="#fff5dd" stroke="#bc9135" stroke-width="2" x="275" y="475" width="750" height="45"/><text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="650" y="504" text-anchor="middle">Disable chạy theo chiều ngược lại: new -> old</text>
+</svg>

@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1300" height="870" viewBox="0 0 1300 870" role="img" aria-labelledby="title desc">
+  <title id="title">Luồng thực tế của Lab 02</title>
+  <desc id="desc">Từ source patch qua kpatch-build, so sánh meminfo object, xác định function và target object, tạo livepatch module rồi load vào kernel.</desc>
+  <defs>
+    <style>
+      text{font-family:Arial,'DejaVu Sans',sans-serif;fill:#303030}.title{font-size:31px;font-weight:700}.h{font-size:19px;font-weight:700}.s{font-size:15px}.panel{fill:#fffef0;stroke:#8b5cf6;stroke-width:2}.box{fill:#f0efff;stroke:#8b5cf6;stroke-width:2}.evidence{fill:#fff7d6;stroke:#b6a536;stroke-width:2}.core{fill:#eaf7ec;stroke:#568d60;stroke-width:2}.result{fill:#eaf7ec;stroke:#568d60;stroke-width:3}.line{fill:none;stroke:#333333;stroke-width:2.5}.arrow{fill:#333333}
+    </style>
+  </defs>
+
+  <rect class="panel" fill="#fffef0" stroke="#8b5cf6" stroke-width="2" x="15" y="15" width="1270" height="840"/>
+  <text class="title" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="31" font-weight="700" x="650" y="58" text-anchor="middle">Luồng thực tế của Lab 02</text>
+
+  <rect class="box" fill="#f0efff" stroke="#8b5cf6" stroke-width="2" x="45" y="95" width="260" height="90"/>
+  <text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="175" y="132" text-anchor="middle">Source patch</text>
+  <text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="175" y="160" text-anchor="middle">lab02-meminfo.patch</text>
+
+  <path class="line" fill="none" stroke="#333333" stroke-width="2.5" d="M305 140 H420"/>
+  <polygon class="arrow" fill="#333333" points="420,140 408,134 408,146"/>
+
+  <rect class="box" fill="#f0efff" stroke="#8b5cf6" stroke-width="2" x="420" y="95" width="280" height="90"/>
+  <text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="560" y="132" text-anchor="middle">kpatch-build</text>
+  <text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="560" y="160" text-anchor="middle">build gốc + build đã patch</text>
+
+  <path class="line" fill="none" stroke="#333333" stroke-width="2.5" d="M700 140 H815"/>
+  <polygon class="arrow" fill="#333333" points="815,140 803,134 803,146"/>
+
+  <rect class="box" fill="#f0efff" stroke="#8b5cf6" stroke-width="2" x="815" y="95" width="440" height="90"/>
+  <text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="1035" y="132" text-anchor="middle">So sánh ELF</text>
+  <text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="1035" y="160" text-anchor="middle">original/patched fs/proc/meminfo.o</text>
+
+  <path fill="none" stroke="#333333" stroke-width="2.5" d="M1035 185 V235 H430 M1035 235 H970"/>
+  <path class="line" fill="none" stroke="#333333" stroke-width="2.5" d="M430 235 V280"/>
+  <polygon class="arrow" fill="#333333" points="430,280 424,268 436,268"/>
+  <path class="line" fill="none" stroke="#333333" stroke-width="2.5" d="M970 235 V280"/>
+  <polygon class="arrow" fill="#333333" points="970,280 964,268 976,268"/>
+
+  <rect class="evidence" fill="#fff7d6" stroke="#b6a536" stroke-width="2" x="250" y="280" width="360" height="90"/>
+  <text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="430" y="317" text-anchor="middle">Changed function</text>
+  <text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="430" y="345" text-anchor="middle">meminfo_proc_show</text>
+
+  <rect class="evidence" fill="#fff7d6" stroke="#b6a536" stroke-width="2" x="790" y="280" width="360" height="90"/>
+  <text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="970" y="317" text-anchor="middle">Target object</text>
+  <text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="970" y="345" text-anchor="middle">vmlinux</text>
+
+  <path fill="none" stroke="#333333" stroke-width="2.5" d="M430 370 V415 H650 M970 370 V415 H650"/>
+  <path class="line" fill="none" stroke="#333333" stroke-width="2.5" d="M650 415 V455"/>
+  <polygon class="arrow" fill="#333333" points="650,455 644,443 656,443"/>
+
+  <rect class="box" fill="#f0efff" stroke="#8b5cf6" stroke-width="2" x="470" y="455" width="360" height="90"/>
+  <text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="650" y="492" text-anchor="middle">Livepatch module</text>
+  <text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="650" y="520" text-anchor="middle">lab02_meminfo.ko</text>
+
+  <path class="line" fill="none" stroke="#333333" stroke-width="2.5" d="M650 545 V585"/>
+  <polygon class="arrow" fill="#333333" points="650,585 644,573 656,573"/>
+
+  <rect class="core" fill="#eaf7ec" stroke="#568d60" stroke-width="2" x="430" y="585" width="440" height="90"/>
+  <text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="650" y="622" text-anchor="middle">Linux livepatch core + dynamic ftrace</text>
+  <text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="650" y="650" text-anchor="middle">load vào KVM host - kernel 6.8.0-138-generic</text>
+
+  <path class="line" fill="none" stroke="#333333" stroke-width="2.5" d="M650 675 V715"/>
+  <polygon class="arrow" fill="#333333" points="650,715 644,703 656,703"/>
+
+  <rect class="result" fill="#eaf7ec" stroke="#568d60" stroke-width="3" x="380" y="715" width="540" height="105"/>
+  <text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="650" y="750" text-anchor="middle">Patch hoạt động</text>
+  <text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="650" y="778" text-anchor="middle">enabled = 1, transition = 0</text>
+  <text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="650" y="803" text-anchor="middle">/proc/meminfo hiển thị LAB02_Vmalloc</text>
+</svg>

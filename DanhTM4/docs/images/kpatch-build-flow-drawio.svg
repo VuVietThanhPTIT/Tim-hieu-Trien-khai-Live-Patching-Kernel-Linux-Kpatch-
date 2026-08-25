@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1460" height="650" viewBox="0 0 1460 650" role="img" aria-labelledby="title desc">
+  <title id="title">Quy trình build và load kpatch</title>
+  <desc id="desc">Từ commit sửa CVE, backport, kpatch-build, hai bản build, so sánh ELF, module livepatch và transition.</desc>
+  <defs>
+    <style>
+      text{font-family:Arial,'DejaVu Sans',sans-serif;fill:#303030}.title{font-size:32px;font-weight:700}.h{font-size:19px;font-weight:700}.s{font-size:15px}.box{fill:#f0efff;stroke:#8b5cf6;stroke-width:2}.panel{fill:#fffef0;stroke:#8b5cf6;stroke-width:2}.note{fill:#fff7d6;stroke:#b6a536;stroke-width:2}.line{fill:none;stroke:#333333;stroke-width:2.5}.arrow{fill:#333333}
+    </style>
+  </defs>
+  <rect class="panel" fill="#fffef0" stroke="#8b5cf6" stroke-width="2" x="15" y="15" width="1430" height="620"/>
+  <text class="title" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="31" font-weight="700" x="730" y="58" text-anchor="middle">Vòng đời một live patch kpatch</text>
+
+  <rect class="box" fill="#f0efff" stroke="#8b5cf6" stroke-width="2" x="45" y="105" width="210" height="88"/><text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="150" y="140" text-anchor="middle">CVE commit</text><text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="150" y="167" text-anchor="middle">upstream/vendor fix</text>
+  <path class="line" fill="none" stroke="#333333" stroke-width="2.5" d="M255 149 H318"/><polygon class="arrow" points="318,149 306,143 306,155"/>
+  <rect class="box" fill="#f0efff" stroke="#8b5cf6" stroke-width="2" x="318" y="105" width="210" height="88"/><text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="423" y="140" text-anchor="middle">Backport</text><text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="423" y="167" text-anchor="middle">kernel source mục tiêu</text>
+  <path class="line" fill="none" stroke="#333333" stroke-width="2.5" d="M528 149 H591"/><polygon class="arrow" points="591,149 579,143 579,155"/>
+  <rect class="box" fill="#f0efff" stroke="#8b5cf6" stroke-width="2" x="591" y="105" width="250" height="88"/><text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="716" y="140" text-anchor="middle">kpatch-build</text><text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="716" y="167" text-anchor="middle">build và phân tích thay đổi</text>
+
+  <path fill="none" stroke="#333333" stroke-width="2.5" d="M716 193 V235 H448 M716 235 H984"/>
+  <path class="line" fill="none" stroke="#333333" stroke-width="2.5" d="M448 235 V278"/><polygon class="arrow" points="448,278 442,266 454,266"/>
+  <path class="line" fill="none" stroke="#333333" stroke-width="2.5" d="M984 235 V278"/><polygon class="arrow" points="984,278 978,266 990,266"/>
+  <rect class="box" fill="#f0efff" stroke="#8b5cf6" stroke-width="2" x="323" y="278" width="250" height="88"/><text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="448" y="313" text-anchor="middle">Build kernel gốc</text><text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="448" y="340" text-anchor="middle">original objects</text>
+  <rect class="box" fill="#f0efff" stroke="#8b5cf6" stroke-width="2" x="859" y="278" width="250" height="88"/><text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="984" y="313" text-anchor="middle">Build kernel đã sửa</text><text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="984" y="340" text-anchor="middle">patched objects</text>
+
+  <path class="line" fill="none" stroke="#333333" stroke-width="2.5" d="M448 366 V385 H650 V410"/><polygon class="arrow" points="650,410 644,398 656,398"/>
+  <path class="line" fill="none" stroke="#333333" stroke-width="2.5" d="M984 366 V385 H750 V410"/><polygon class="arrow" points="750,410 744,398 756,398"/>
+  <rect class="box" fill="#f0efff" stroke="#8b5cf6" stroke-width="2" x="570" y="410" width="260" height="88"/><text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="700" y="445" text-anchor="middle">So sánh ELF</text><text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="700" y="472" text-anchor="middle">function + relocation thay đổi</text>
+  <path class="line" fill="none" stroke="#333333" stroke-width="2.5" d="M830 454 H930"/><polygon class="arrow" points="930,454 918,448 918,460"/>
+  <rect class="box" fill="#f0efff" stroke="#8b5cf6" stroke-width="2" x="930" y="410" width="205" height="88"/><text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="1032" y="445" text-anchor="middle">Module .ko</text><text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="1032" y="472" text-anchor="middle">code mới + metadata</text>
+  <path class="line" fill="none" stroke="#333333" stroke-width="2.5" d="M1135 454 H1235"/><polygon class="arrow" points="1235,454 1223,448 1223,460"/>
+  <rect class="box" fill="#f0efff" stroke="#8b5cf6" stroke-width="2" x="1235" y="397" width="190" height="114"/><text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="1330" y="433" text-anchor="middle">Load patch</text><text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="1330" y="461" text-anchor="middle">livepatch + ftrace</text><text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="1330" y="487" text-anchor="middle">transition = 0</text>
+
+  <rect class="note" fill="#fff7d6" stroke="#b6a536" stroke-width="2" x="130" y="560" width="1200" height="55"/><text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="730" y="595" text-anchor="middle">Build thành công chưa đủ: vẫn cần source review, binary review và runtime validation</text>
+</svg>

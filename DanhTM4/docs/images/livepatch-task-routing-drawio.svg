@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="470" viewBox="0 0 1200 470" role="img" aria-labelledby="title desc">
+  <title id="title">Ftrace chọn hàm cũ hoặc mới theo patch state</title>
+  <desc id="desc">Lời gọi hàm đi vào ftrace livepatch handler và được chuyển tới original hoặc replacement function.</desc>
+  <defs>
+    <style>text{font-family:'Segoe UI',Arial,sans-serif;fill:#303030}.title{font-size:31px;font-weight:600}.h{font-size:19px;font-weight:600}.s{font-size:15px}.box{fill:#f0efff;stroke:#8b5cf6;stroke-width:2}.panel{fill:#fffef0;stroke:#8b5cf6;stroke-width:2}.old{fill:#fdecec;stroke:#c65a5a;stroke-width:2}.new{fill:#eaf7ec;stroke:#568d60;stroke-width:2}.line{fill:none;stroke:#333333;stroke-width:2.5}.arrow{fill:#333333}</style>
+  </defs>
+  <rect class="panel" fill="#fffef0" stroke="#8b5cf6" stroke-width="2" x="15" y="15" width="1170" height="440"/>
+  <text class="title" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="31" font-weight="700" x="600" y="58" text-anchor="middle">Function routing trong lúc transition</text>
+  <rect class="box" fill="#f0efff" stroke="#8b5cf6" stroke-width="2" x="55" y="185" width="235" height="82"/><text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="172" y="219" text-anchor="middle">patched_function()</text><text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="172" y="246" text-anchor="middle">call từ current task</text>
+  <path class="line" fill="none" stroke="#333333" stroke-width="2.5" d="M290 226 H408"/><polygon class="arrow" points="408,226 396,220 396,232"/>
+  <rect class="box" fill="#f0efff" stroke="#8b5cf6" stroke-width="2" x="408" y="160" width="310" height="132"/><text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="563" y="201" text-anchor="middle">ftrace/livepatch handler</text><text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="563" y="231" text-anchor="middle">đọc patch_state của current</text><text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="563" y="256" text-anchor="middle">chọn implementation</text>
+
+  <path class="line" fill="none" stroke="#333333" stroke-width="2.5" d="M718 196 H800 V117 H898"/><polygon class="arrow" points="898,117 886,111 886,123"/><text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="820" y="99" text-anchor="middle">old state = 0</text>
+  <rect class="old" fill="#fdecec" stroke="#c65a5a" stroke-width="2" x="898" y="78" width="245" height="82"/><text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="1020" y="112" text-anchor="middle">Original function</text><text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="1020" y="139" text-anchor="middle">semantics cũ</text>
+  <path class="line" fill="none" stroke="#333333" stroke-width="2.5" d="M718 255 H800 V342 H898"/><polygon class="arrow" points="898,342 886,336 886,348"/><text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="820" y="367" text-anchor="middle">new state = 1</text>
+  <rect class="new" fill="#eaf7ec" stroke="#568d60" stroke-width="2" x="898" y="301" width="245" height="82"/><text class="h" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="19" font-weight="700" x="1020" y="335" text-anchor="middle">Replacement function</text><text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="1020" y="362" text-anchor="middle">semantics mới</text>
+
+  <text class="s" font-family="Arial, DejaVu Sans, sans-serif" fill="#303030" font-size="15" x="600" y="425" text-anchor="middle">Task chưa safe dùng code cũ; task đã safe dùng code mới.</text>
+</svg>
