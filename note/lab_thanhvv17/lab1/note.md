@@ -1,3 +1,6 @@
+---
+aliases:
+---
 
 
 **Requirement** : 
@@ -135,7 +138,6 @@ sudo cloud-localds /var/lib/libvirt/images/vm2-seed.img /tmp/vm2-user-data.yaml
 - SSH vào 2 vm và và cài đặt gói iperf3 , trước đó thì bật ip forward trên host , và add default route thêm dns trên 2 VM 
 
 ```
-
 sudo apt install -y iperf3
 
 ```
@@ -148,14 +150,25 @@ iperf3 -s
 
 - Đo luồng từ VM1 -> VM2 
 ```
-iperf3 -c 192.168.100.52 -t 30 -i 2
+iperf3 -c 192.168.100.51 -t 30 -i 2
 ```
 ![Pasted image 20260822214340](img/Pasted%20image%2020260822214340.png)
 - Đo ngược từ VM2 -> VM1 bằng thêm -R 
 ```
-iperf3 -c 192.168.100.12 -t 30 -R
+iperf3 -c 192.168.100.51 -t 30 -R
 ```
 ![Pasted image 20260822214428](img/Pasted%20image%2020260822214428.png)
 
-- test ping từ vm2 sang vm1 
+- test ping từvm1 sang vm2 
 ![Pasted image 20260822220646](img/Pasted%20image%2020260822220646.png)
+
+
+# Cập nhật lại kết quả của kernel version `6.8.0-134.134`.
+- Đo luồng từ VM1 -> VM2 
+![](img/Pasted%20image%2020260824132548.png)
+
+- Đo ngược từ VM2 -> VM1 bằng thêm -R 
+![](img/Pasted%20image%2020260824132718.png)
+
+- test ping từ vm1 sang vm2 
+![](img/Pasted%20image%2020260824133036.png)
