@@ -17,7 +17,7 @@ Compute host của cloud đang chạy nhiều máy ảo (VM). Cách cập nhật
 
 ![Bản đồ kiến thức từ source patch CVE tới dynamic ftrace](images/kpatch-knowledge-map-drawio.svg)
 
-*Hình 1 — quan hệ giữa kpatch-build, livepatch module, Linux livepatch core và ftrace. Sơ đồ biên soạn riêng cho bộ tài liệu này.*
+*Hình 1 — quan hệ giữa kpatch-build, livepatch module, Linux livepatch core và ftrace.*
 
 Ba tên dễ bị dùng lẫn:
 
