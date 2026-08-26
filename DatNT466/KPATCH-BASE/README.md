@@ -2,25 +2,32 @@
 
 ## Mục lục
 
-1. [1. Cách đọc và bản đồ bộ tài liệu](#1-cách-đọc-và-bản-đồ-bộ-tài-liệu)
-2. [2. Các khái niệm cốt lõi cần phân biệt](#2-các-khái-niệm-cốt-lõi-cần-phân-biệt)
-3. [3. Liên hệ với 5 lab thực hành](#3-liên-hệ-với-5-lab-thực-hành)
-4. [4. Trạng thái dự án và quy ước sử dụng tài liệu](#4-trạng-thái-dự-án-và-quy-ước-sử-dụng-tài-liệu)
-5. [5. Tài liệu tham khảo](#5-tài-liệu-tham-khảo)
-
-> Bộ tài liệu nghiên cứu có hệ thống về **kpatch / Linux livepatch (KLP) / ftrace / QEMU-KVM**, được viết theo cấu trúc “problem → architecture → mechanism → implementation → operation → production”.
->
-> Mục tiêu: sau khi đọc xong, người học không chỉ biết chạy `kpatch load`, mà phải giải thích được **vì sao công cụ tồn tại, nó thay code bằng cách nào, điều kiện để patch an toàn, lịch sử từ `stop_machine()` sang per-task consistency model, vì sao transition có thể stall, và cách vận hành trong môi trường KVM compute**.
-
+1. [Thuật ngữ và từ viết tắt](#thuật-ngữ-và-từ-viết-tắt)
+2. [1. Cách đọc và bản đồ bộ tài liệu](#1-cách-đọc-và-bản-đồ-bộ-tài-liệu)
+3. [2. Các khái niệm cốt lõi cần phân biệt](#2-các-khái-niệm-cốt-lõi-cần-phân-biệt)
+4. [3. Liên hệ với 5 lab thực hành](#3-liên-hệ-với-5-lab-thực-hành)
+5. [4. Trạng thái dự án và quy ước sử dụng tài liệu](#4-trạng-thái-dự-án-và-quy-ước-sử-dụng-tài-liệu)
+6. [5. Tài liệu tham khảo](#5-tài-liệu-tham-khảo)
 
 ---
+
+## Thuật ngữ và từ viết tắt
+
+| Thuật ngữ / Từ viết tắt | Tên đầy đủ | Giải thích ngắn gọn |
+|---|---|---|
+| **kpatch** | kpatch Tooling | Bộ công cụ do Red Hat phát triển để tạo và quản lý bản vá livepatch kernel mà không cần reboot. |
+| **KLP** | Kernel Livepatching | Subsystem / Engine chính thức trong upstream Linux kernel quản lý vòng đời và tính nhất quán của bản vá. |
+| **ftrace** | Function Tracer | Hạ tầng tracing và dynamic hooking trong Linux kernel được KLP dùng để điều hướng lệnh gọi hàm. |
+| **QEMU** | Quick Emulator | Trình giả lập phần cứng và quản lý máy ảo chạy ở không gian người dùng (userspace). |
+| **KVM** | Kernel-based Virtual Machine | Subsystem ảo hóa phần cứng trực tiếp trong Linux kernel. |
+| **CVE** | Common Vulnerabilities and Exposures | Danh mục mã định danh chuẩn hóa các lỗ hổng bảo mật. |
+| **ABI** | Application Binary Interface | Giao diện nhị phân quy định cách các module/function giao tiếp ở cấp độ mã máy. |
+| **CLI** | Command Line Interface | Giao diện điều khiển bằng dòng lệnh (`kpatch`, `kpatch-build`). |
+
 
 ## Sơ đồ kiến thức tổng thể
 
 ```text
-BÀI TOÁN CLOUD / KERNEL CVE
-          |
-          v
    SOURCE PATCH / CVE FIX
           |
           v
@@ -54,55 +61,7 @@ BÀI TOÁN CLOUD / KERNEL CVE
       vận hành + recovery
 ```
 
-## 1. Cách đọc và bản đồ bộ tài liệu
-
-**Cách đọc bộ tài liệu**
-
-```text
-WHY?
-  ↓
-01. Bài toán & tổng quan
-  ↓
-WHAT IS INSIDE?
-  ↓
-02. Kiến trúc
-  ↓
-HOW IS A PATCH BUILT?
-  ↓
-03. kpatch-build + .ko
-  ↓
-HOW DOES EXECUTION GET REDIRECTED?
-  ↓
-04. ftrace
-  ↓
-HOW DOES THE KERNEL STAY CONSISTENT?
-  ↓
-05. transition / safe state / per-task consistency
-  ↓
-WHERE DOES KVM FIT?
-  ↓
-06. QEMU / KVM / KVM_RUN / MMU
-  ↓
-HOW DO I USE IT?
-  ↓
-07. cài đặt / build / load / unload
-  ↓
-CAN THIS FIX BE LIVE-PATCHED?
-  ↓
-08. patchability / giới hạn / rủi ro
-  ↓
-WHAT IF IT STALLS OR FAILS?
-  ↓
-09. observability / troubleshooting / recovery
-  ↓
-HOW SHOULD A CLOUD TEAM OPERATE IT?
-  ↓
-10. production design / audit / best practices
-```
-
----
-
-**Danh sách tài liệu**
+## 1. Danh sách tài liệu
 
 | File | Câu hỏi chính |
 |---|---|
@@ -124,14 +83,11 @@ HOW SHOULD A CLOUD TEAM OPERATE IT?
 **Phân biệt 3 khái niệm dễ nhầm**
 
 ```text
-kpatch
-= tooling: build + CLI + helper
+kpatch = tooling: build + CLI + helper
 
-Linux livepatch (KLP)
-= infrastructure trong kernel: patch object/function, transition, consistency
+Linux livepatch (KLP) = infrastructure trong kernel: patch object/function, transition, consistency
 
-ftrace
-= hạ tầng tracing/hooking động được livepatch dùng để đổi hướng tại đầu hàm
+ftrace = hạ tầng tracing/hooking động được livepatch dùng để đổi hướng tại đầu hàm
 ```
 
 Nói ngắn gọn:
@@ -148,23 +104,8 @@ ftrace       = cơ chế function-entry redirect nền tảng (dùng IP-modify c
 
 ---
 
-**Một câu mô tả toàn bộ hệ thống**
 
 > **Kpatch nhận một source diff, build và phân tích binary để tạo livepatch module chứa các function thay thế; module đăng ký với Linux livepatch core, livepatch dùng ftrace để redirect function entry, đồng thời dùng consistency model theo từng task để chuyển old→new code an toàn mà không reboot kernel.**
-
----
-
-## 3. Liên hệ với 5 lab thực hành
-
-**Mapping với 5 lab**
-
-| Lab | Kiến thức cần đối chiếu |
-|---|---|
-| Lab 1 – KVM host | File 06 + 07 |
-| Lab 2 – kpatch-build | File 02 + 03 + 07 + 08 |
-| Lab 3 – load khi VM chạy | File 04 + 05 + 06 + 09 |
-| Lab 4 – stalled transition | File 05 + 06 + 09 |
-| Lab 5 – recovery | File 09 + 10 |
 
 ---
 
@@ -172,7 +113,7 @@ ftrace       = cơ chế function-entry redirect nền tảng (dùng IP-modify c
 
 **Trạng thái dự án cần biết (2026)**
 
-Kpatch vẫn rất hữu ích để hiểu và vận hành các kernel đời hiện tại/đời cũ, nhưng upstream project đã thông báo **maintenance mode từ Linux 6.19**, và hướng phát triển mới là `klp-build` trong upstream kernel. Vì vậy cần phân biệt:
+Kpatch vẫn rất hữu ích để hiểu và vận hành các kernel đời hiện tại/đời cũ, nhưng upstream project đã thông báo **maintenance mode từ Linux 6.19**(maintenace mode-dự án vẫn được duy trì ở mức sửa lỗi cần thiết, giữ khả năng hoạt động với các hệ thống hiện có), và hướng phát triển mới là `klp-build` trong upstream kernel. Vì vậy cần phân biệt:
 
 - **Kernel 6.8 trong bộ lab:** tiếp tục dùng kpatch hợp lý.
 - **Thiết kế mới cho kernel 6.19+:** cần đánh giá `klp-build` và tooling của distro/vendor.

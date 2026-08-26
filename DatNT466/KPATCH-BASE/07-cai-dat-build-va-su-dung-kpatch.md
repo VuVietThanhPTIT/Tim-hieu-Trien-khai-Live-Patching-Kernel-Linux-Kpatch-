@@ -2,12 +2,24 @@
 
 ## Mục lục
 
-1. [1. Mục tiêu, pre-flight và sizing môi trường build](#1-mục-tiêu-pre-flight-và-sizing-môi-trường-build)
-2. [2. Cài đặt công cụ và chuẩn bị đúng kernel material](#2-cài-đặt-công-cụ-và-chuẩn-bị-đúng-kernel-material)
-3. [3. Build patch và kiểm tra livepatch module](#3-build-patch-và-kiểm-tra-livepatch-module)
-4. [4. Load, monitor, unload và persistent installation](#4-load-monitor-unload-và-persistent-installation)
-5. [5. Catalogue lỗi thường gặp và checklist trước khi load](#5-catalogue-lỗi-thường-gặp-và-checklist-trước-khi-load)
-6. [6. Tài liệu tham khảo](#6-tài-liệu-tham-khảo)
+1. [Thuật ngữ và từ viết tắt](#thuật-ngữ-và-từ-viết-tắt)
+2. [1. Mục tiêu, pre-flight và sizing môi trường build](#1-mục-tiêu-pre-flight-và-sizing-môi-trường-build)
+3. [2. Cài đặt công cụ và chuẩn bị đúng kernel material](#2-cài-đặt-công-cụ-và-chuẩn-bị-đúng-kernel-material)
+4. [3. Build patch và kiểm tra livepatch module](#3-build-patch-và-kiểm-tra-livepatch-module)
+5. [4. Load, monitor, unload và persistent installation](#4-load-monitor-unload-và-persistent-installation)
+6. [5. Catalogue lỗi thường gặp và checklist trước khi load](#5-catalogue-lỗi-thường-gặp-và-checklist-trước-khi-load)
+7. [6. Tài liệu tham khảo](#6-tài-liệu-tham-khảo)
+
+---
+
+## Thuật ngữ và từ viết tắt
+
+| Thuật ngữ / Từ viết tắt | Tên đầy đủ | Giải thích ngắn gọn |
+|---|---|---|
+| **Runbook** | Technical Operational Guide | Tài liệu quy trình kỹ thuật chuẩn hướng dẫn các bước thực thi từ chuẩn bị đến vận hành. |
+| **Pre-flight** | Pre-flight Checks | Bước kiểm tra tiền điều kiện (môi trường, dung lượng, kernel release, config) trước khi thực hiện thao tác chính. |
+| **kpatch load / unload** | CLI Lifecycle Commands | Các lệnh CLI của kpatch dùng để đăng ký kích hoạt hoặc hủy đăng ký gỡ livepatch module khỏi kernel đang chạy. |
+| **dmesg** | Display Message | Câu lệnh xem buffer nhật ký hệ thống kernel (kernel ring buffer log). |
 
 ## Runbook từ chuẩn bị đến load/unload
 

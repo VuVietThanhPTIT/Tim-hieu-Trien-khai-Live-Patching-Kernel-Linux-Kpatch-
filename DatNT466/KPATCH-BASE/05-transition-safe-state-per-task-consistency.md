@@ -1,265 +1,205 @@
-# 05 – Transition, safe state và per-task consistency
+# 05 – Transition, Safe State và Per-Task Consistency: Cơ chế hội tụ an toàn
 
 ## Mục lục
 
-1. [1. Consistency model và hai chiều transition](#1-consistency-model-và-hai-chiều-transition)
-2. [2. Safe-state và các switching mechanism của kernel livepatch](#2-safe-state-và-các-switching-mechanism-của-kernel-livepatch)
-3. [3. Stalled transition, observability và case KVM](#3-stalled-transition-observability-và-case-kvm)
-4. [4. Reverse/cancel và force: cơ chế cùng rủi ro](#4-reversecancel-và-force-cơ-chế-cùng-rủi-ro)
-5. [5. Mental model và checklist chẩn đoán](#5-mental-model-và-checklist-chẩn-đoán)
-6. [6. Tài liệu tham khảo](#6-tài-liệu-tham-khảo)
-
-##  Mô hình transition theo từng task
-
-```text
-PATCHING: target = 1
-
-Task A: 0 ---------> 1
-Task B: 0 -----> 1
-Task C: 0 -----------------> 1
-             ^
-             |
-       transition = 1
-
-Khi tất cả task đã hội tụ:
-             |
-             v
-       transition = 0
-
-UNPATCHING làm ngược lại: 1 -> 0
-
-Một task chỉ đổi state tại điểm kernel cho là an toàn
-(stack/switching mechanism phù hợp), không bị ép đổi giữa
-một execution context không nhất quán.
-```
-
-## 1. Consistency model và hai chiều transition
-
-**Vấn đề consistency**
-
-Giả sử `foo()` thay semantics. Tại thời điểm enable patch:
-
-```text
-CPU0: Task A đang ở giữa foo_old()
-CPU1: Task B chuẩn bị gọi foo()
-```
-
-Nếu ép global switch tức thời, Task A có thể tiếp tục với state cũ nhưng nested call lại dùng semantics mới. Một số patch sẽ phá invariant.
-
-Linux livepatch giải quyết bằng **per-task consistency**.
+1. [Thuật ngữ và từ viết tắt](#thuật-ngữ-và-từ-viết-tắt)
+2. [Bức tranh tổng thể: Vấn đề nhất quán dữ liệu (Data Consistency Problem)](#1-bức-tranh-tổng-thể-vấn-đề-nhất-quán-dữ-liệu-data-consistency-problem)
+3. [Per-Task Consistency Model – Mô hình chuyển đổi theo từng Task](#2-per-task-consistency-model--mô-hình-chuyển-đổi-theo-từng-task)
+4. [Safe State và 3 cơ chế kiểm tra điểm chuyển đổi an toàn](#3-safe-state-và-3-cơ-chế-kiểm-tra-điểm-chuyển-đổi-an-toàn)
+5. [Stalled Transition – Nguyên nhân tắc nghẽn và cách xử lý](#4-stalled-transition--nguyên-nhân-tắc-nghẽn-và-cách-xử-lý)
+6. [Reverse Transition vs Force Transition – Cơ chế và Rủi ro](#5-reverse-transition-vs-force-transition--cơ-chế-và-rủi-ro)
+7. [Mental Model & Checklist chẩn đoán sự cố Transition](#6-mental-model--checklist-chẩn-đoán-sự-cố-transition)
+8. [Tài liệu tham khảo](#7-tài-liệu-tham-khảo)
 
 ---
 
-**Per-task consistency là gì?**
+## Thuật ngữ và từ viết tắt
 
-Mỗi task có patch state trong transition:
-
-```text
-0 = unpatched
-1 = patched
-```
-
-Task A và Task B có thể tạm thời khác state, nhưng **mỗi task phải nhìn thấy một view nhất quán** theo state của chính nó.
+| Thuật ngữ / Từ viết tắt | Tên đầy đủ | Giải thích ngắn gọn |
+|---|---|---|
+| **Per-Task Consistency** | Hybrid Consistency Model (Mô hình nhất quán theo từng Task) | Mô hình chuyển đổi trạng thái patch độc lập trên từng process/thread, đảm bảo mỗi task chỉ thấy một view duy nhất. |
+| **TIF_PATCH_PENDING** | Thread Information Flag (Cờ báo hiệu patch đang chờ) | Cờ trong `task_struct->flags` đánh dấu task đang ở giữa quá trình transition chưa đạt Safe State. |
+| **Safe State** | Safe Transition Point (Điểm chuyển đổi an toàn) | Trạng thái trong luồng thực thi mà tại đó task có thể chuyển đổi `patch_state` mà không làm hỏng dữ liệu. |
+| **ORC Unwinder** | Oops Rewind Capability Unwinder (Bộ giải mã Callstack ORC) | Cơ chế unwind callstack đáng tin cậy trên x86_64 (`CONFIG_UNWINDER_ORC`) phục vụ kiểm tra stack an toàn. |
+| **Kernel-Exit** | Kernel to User Transition (Ranh giới thoát khỏi Kernel về Userspace) | Điểm chuyển đổi khi task hoàn tất syscall/IRQ/signal handler và chuẩn bị quay về Userspace. |
+| **Stall** | Transition Stall (Tắc nghẽn chuyển đổi) | Hiện tượng quá trình transition bị kéo dài do có task chưa đạt Safe State. |
 
 ---
 
-**Patching transition**
+## 1. Bức tranh tổng thể: Vấn đề nhất quán dữ liệu (Data Consistency Problem)
+
+Giả sử một bản vá lỗi thay đổi logic của hàm `foo()` và cấu trúc dữ liệu liên quan. Tại thời điểm người vận hành kích hoạt bản vá:
 
 ```text
-initial:
-Task A = 0
-Task B = 0
-Task C = 0
+CPU 0: Task A đang thực thi dở ở giữa mã của foo_old()
+CPU 1: Task B vừa hoàn tất syscall và chuẩn bị gọi foo()
+```
 
-transition=1:
-Task A = 1
-Task B = 0   ← chưa safe
-Task C = 1
+Nếu ép **Global Switch (Chuyển đổi toàn hệ thống tức thì)**:
+- Task A tiếp tục thực thi mã cũ nhưng các hàm con (nested functions) được gọi ở đoạn sau lại nhảy sang thực thi mã mới.
+- Kết quả: Task A rơi vào trạng thái "nửa cũ - nửa mới" (Inconsistent State), dẫn tới sai lệch dữ liệu, vi phạm điều kiện khóa (locking violation) hoặc gây Kernel Panic!
 
-complete:
-Task A = 1
-Task B = 1
-Task C = 1
-transition=0
+```text
+            VẤN ĐỀ NẾU ÉP GLOBAL SWITCH TỨC THÌ (KHÔNG CÓ CONSISTENCY)
+            
+  Task A ───> [foo_old() đang chạy] ───> (Ép chuyển đổi giữa chừng!) ───> [bar_new()] ───> ERRROR / PANIC!
 ```
 
 ---
 
-**Unpatching transition**
+## 2. Per-Task Consistency Model – Mô hình chuyển đổi theo từng Task
 
-Khi disable/unload:
+Để giải quyết triệt để rủi ro trên, Linux Livepatch Core (KLP) áp dụng **Per-Task Consistency Model (Mô hình nhất quán theo từng tiến trình)** do Red Hat và SUSE đề xuất.
 
-```text
-1 → 0
-```
-
-Điểm dễ nhầm:
-
-- patching: `state=0` là task chưa hội tụ;
-- unpatching: `state=1` là task chưa hội tụ.
-
----
-
-**`transition=1` không đồng nghĩa lỗi**
-
-`transition=1` chỉ nói hệ thống đang hội tụ.
-
-Nó đáng điều tra khi kéo dài bất thường hoặc tooling/kernel bắt đầu signal remaining tasks.
-
----
-
-## 2. Safe-state và các switching mechanism của kernel livepatch
-
-**Safe state nên hiểu chính xác thế nào?**
-
-Không nên định nghĩa quá cứng:
+### Nguyên lý hoạt động:
+1. Mỗi tiến trình/thread (`task_struct`) trong Kernel mang một thuộc tính riêng tên là **`patch_state`**:
+   - `patch_state = 0`: Task đang sử dụng phiên bản mã cũ (**Unpatched**).
+   - `patch_state = 1`: Task đã chuyển sang sử dụng phiên bản mã mới (**Patched**).
+2. Trong quá trình chuyển đổi (**Transition Phase**), Task A và Task B có thể tạm thời mang hai `patch_state` khác nhau, nhưng **mỗi Task đều nhìn thấy một góc nhìn mã nhất quán (Consistency View)** theo đúng trạng thái của chính nó.
 
 ```text
-“safe = không có patched function trên stack”
+               QUÁ TRÌNH HỘI TỤ CHUYỂN ĐỔI (PATCHING TRANSITION)
+
+  Trạng thái ban đầu:         sysfs: enabled=1, transition=1           Sysfs: enabled=1, transition=0
+  (Chưa kích hoạt)            (Quá trình chuyển đổi đang diễn ra)      (Hoàn tất hội tụ)
+
+  Task A: state=0 ──────────> Task A: state=1 (Đạt safe point) ───────> Task A: state=1
+  Task B: state=0 ──────────> Task B: state=0 (Chưa safe point) ──────> Task B: state=1 (Đạt safe point)
+  Task C: state=0 ──────────> Task C: state=1 (Đạt safe point) ───────> Task C: state=1
+
+                              (Các task dần dần chuyển trạng thái)     (Tất cả task đã hội tụ = 1)
 ```
 
-Stack checking là **một cơ chế quan trọng**, nhưng upstream livepatch dùng nhiều cơ chế bổ sung:
-
-1. reliable stack checking cho sleeping task;
-2. kernel-exit switching khi task quay về userspace;
-3. idle patch point;
-4. explicit patch points cho một số kthread patterns.
-
-Safe nghĩa rộng hơn:
-
-> **Điểm mà task có thể đổi patch state mà không vi phạm consistency model của patch.**
-
-**Cờ `TIF_PATCH_PENDING` và cơ chế chuyển đổi**:
-Khi kích hoạt transition, Livepatch core bật cờ `TIF_PATCH_PENDING` trong `task_struct->flags` của mọi process/thread. Khi cờ này bật, kernel liên tục tìm cơ hội chuyển đổi trạng thái của task bằng 3 con đường chính:
-
-1. **Reliable Stack Checking (Sleeping tasks)**:
-   Nếu kiến trúc hỗ trợ unwind đáng tin cậy (như **ORC unwinder** `CONFIG_UNWINDER_ORC` trên x86_64), Livepatch core gọi `klp_check_stack()` để kiểm tra callstack của task đang ngủ (`TASK_INTERRUPTIBLE` / `TASK_UNINTERRUPTIBLE`). Nếu không có bất kỳ hàm bị vá (cả `old_func` và `new_func`) nằm trên stack, cờ `TIF_PATCH_PENDING` được xóa và patch state của task chuyển sang target.
+### Hai chiều chuyển đổi (Transition Directions):
+- **Patching Transition (0 → 1):** Chuyển từ mã cũ sang mã mới (`sysfs: enabled=1, transition=1`). Mục tiêu hội tụ là toàn bộ các Task chuyển sang `state = 1`. Khi hoàn tất, cờ chuyển về `transition = 0`.
+- **Unpatching Transition (1 → 0):** Khi gỡ bản vá (`kpatch unload` / `sysfs: enabled=0, transition=1`). Mục tiêu hội tụ là toàn bộ các Task quay về `state = 0`. When complete, patch module is unregistered.
 
 ---
 
-**Kernel-exit switching**
+## 3. Safe State và 3 cơ chế kiểm tra điểm chuyển đổi an toàn
 
-User task có thể được switch khi quay về userspace sau:
+### Safe State là gì?
 
-- syscall;
-- user IRQ;
-- signal.
+> **Safe State (Trạng thái an toàn)** không phải là "dừng Task", mà là điểm trong luồng thực thi mà tại đó Task không nằm trong bất kỳ hàm bị vá nào (cả hàm cũ và hàm mới), giúp Task chuyển đổi `patch_state` an toàn.
 
-CPU-bound user task cuối cùng thường gặp interrupt và có opportunity switch.
-
-I/O-bound task ngủ trong affected function có thể cần wake/signal để thoát path.
-
----
-
-**Idle task và kthread**
-
-Idle/swapper không quay userspace, nên livepatch có explicit update point trong idle loop.
-
-Kthread tùy loại có thể khó hơn nếu không có reliable stack hoặc explicit patch point phù hợp.
-
----
-
-## 3. Stalled transition, observability và case KVM
-
-**Tại sao transition có thể stall?**
+Khi bắt đầu transition, KLP Core thiết lập cờ **`TIF_PATCH_PENDING`** trong `task_struct->flags` cho tất cả các task. Kernel sử dụng 3 cơ chế chính để chuyển đổi trạng thái của task:
 
 ```text
-Task X cứ nằm hoặc quay lại affected execution path
-           ↓
-không đạt switching condition
-           ↓
-patch_state vẫn initial
-           ↓
-transition = 1 kéo dài
+                         3 CƠ CHẾ CHUYỂN ĐỔI SAFE STATE
+                                       │
+     ┌─────────────────────────────────┼─────────────────────────────────┐
+     ▼                                 ▼                                 ▼
+ 1. Reliable Stack Checking    2. Kernel-Exit Switching          3. Idle Loop Patch Points
+ (Dành cho Sleeping Tasks)     (Dành cho Running/User Tasks)     (Dành cho Idle/Swapper Threads)
 ```
+
+### 1. Reliable Stack Checking (Sleeping Tasks)
+- **Áp dụng cho:** Các Task đang ở trạng thái ngủ (`TASK_INTERRUPTIBLE` / `TASK_UNINTERRUPTIBLE`).
+- **Cơ chế:** KLP Core sử dụng bộ giải mã Callstack đáng tin cậy (**ORC Unwinder** `CONFIG_UNWINDER_ORC` trên x86_64) để duyệt qua danh sách hàm trên Stack (`klp_check_stack()`).
+- **Điều kiện:** Nếu **KHÔNG CÓ** bất kỳ hàm bị vá nào nằm trong Callstack, Kernel xóa cờ `TIF_PATCH_PENDING` và cập nhật `patch_state = target`.
+
+### 2. Kernel-Exit Switching (Running / Userspace Tasks)
+- **Áp dụng cho:** Các Task đang thực thi chương trình người dùng ở Userspace hoặc đang gọi System Calls.
+- **Cơ chế:** Khi Task hoàn tất System Call, xử lý ngắt (IRQ) hoặc xử lý Tín hiệu (Signal) và chuẩn bị quay trở lại Userspace (`exit_to_user_mode_prepare()`), Kernel kiểm tra cờ `TIF_PATCH_PENDING`.
+- **Điều kiện:** Tại ranh giới Kernel-Exit, Task hoàn toàn không còn mã Kernel nào trên Stack. Kernel tự động cập nhật `patch_state = target`.
+
+### 3. Idle Task & Kernel Threads Update
+- **Áp dụng cho:** Tiến trình nhàn rỗi (`swapper/idle`) và các Kernel Threads hệ thống không bao giờ thoát về Userspace.
+- **Cơ chế:** Livepatch chèn các điểm kiểm tra chủ động (`klp_update_patch_state(current)`) bên trong vòng lặp Idle (`cpu_idle_loop`).
 
 ---
 
-**Observability**
+## 4. Stalled Transition – Nguyên nhân tắc nghẽn và cách xử lý
+
+### Tại sao Transition lại bị tắc nghẽn (Stall)?
+
+Hiện tượng **Transition Stall** xảy ra khi cờ `sysfs` báo `transition = 1` kéo dài bất thường.
+
+```text
+    Task X kẹt trong vòng lặp long-running
+    hoặc liên tục gọi lại hàm bị vá
+                  │
+                  ▼
+    Không bao giờ đạt điểm Kernel-Exit
+    hoặc Callstack luôn chứa hàm bị vá
+                  │
+                  ▼
+    cờ TIF_PATCH_PENDING không thể xóa
+                  │
+                  ▼
+    Quá trình Transition bị tắc nghẽn (STALL)!
+```
+
+### Phương pháp theo dõi và xác định Task bị kẹt (Observability):
 
 ```bash
-cat /sys/kernel/livepatch/<patch>/transition
-cat /proc/<pid>/patch_state
-cat /proc/<pid>/task/<tid>/patch_state
-sudo cat /proc/<pid>/task/<tid>/stack
+# 1. Kiểm tra trạng thái transition chung
+cat /sys/kernel/livepatch/<patch_name>/transition
+
+# 2. Quét tìm các Task chưa đạt target state (ví dụ target = 1)
+for f in /proc/*/task/*/patch_state; do
+  [ -r "$f" ] || continue
+  state=$(cat "$f")
+  if [ "$state" -eq 0 ]; then
+    echo "Task kẹt: $f | patch_state=$state"
+  fi
+done
+
+# 3. Kiểm tra Callstack của Task bị kẹt
+sudo cat /proc/<PID>/task/<TID>/stack
 ```
+
+### Cơ chế gỡ kẹt bằng Signal Kick (`klp_send_signals` / `kpatch signal`)
+Khi một Task (ví dụ: QEMU vCPU thread) kẹt trong vòng lặp `KVM_RUN` không chịu thoát ra, Livepatch core hoặc câu lệnh `kpatch signal` sẽ gửi một tín hiệu giả (**Fake Signal** `SIGWINCH`). Tín hiệu này ngắt syscall `KVM_RUN`, ép vCPU thread quay về ranh giới **Kernel-Exit**, giúp cờ `TIF_PATCH_PENDING` được kiểm tra và cập nhật `patch_state = target` thành công!
 
 ---
 
-**Case KVM workload**
+## 5. Reverse Transition vs Force Transition – Cơ chế và Rủi ro
 
-Trong reverse transition của lab, target là `0`. Một số QEMU vCPU thread vẫn:
+Khi một transition bị stall kéo dài hoặc phát hiện bản vá có lỗi, người vận hành có 2 lựa chọn xử lý:
 
 ```text
-CPU 0/KVM state=1
-CPU 1/KVM state=1
+                         CÁC PHƯƠNG ÁN XỬ LÝ KHI TRANSITION STALL
+                                            │
+                    ┌───────────────────────┴───────────────────────┐
+                    ▼                                               ▼
+         Reverse Transition (Hủy bỏ an toàn)             Force Transition (Cưỡng bức)
+  • Đảo ngược target: `enabled = 0`.               • Ghi đè `transition = 0` bằng tay (`echo 1 > sysfs/force`).
+  • Chờ các Task quay về `state = 0` an toàn.      • Bỏ qua kiểm tra Safe State / Stack.
+  • Được khuyến nghị sử dụng.                      • ⚠️ RỦI RO CAO: Bắt buộc Reboot sau đó!
 ```
 
-trong khi nhiều QEMU thread khác đã `0`.
-
-Đây là bằng chứng trực tiếp của per-task convergence.
+> **Cảnh báo Kỹ thuật về `force`:** Việc ép cờ `force = 1` có thể làm cho một số Task đang thực thi dở bị nhảy giữa hai phiên bản mã, gây hỏng bộ nhớ ẩn (Silent Corruption). Chuẩn vận hành Enterprise yêu cầu phải lên kế hoạch Reboot máy chủ ngay sau khi dùng `force`.
 
 ---
 
-**Signaling remaining tasks**
+## 6. Mental Model & Checklist chẩn đoán sự cố Transition
 
-Kernel/livepatch có thể signal/poke remaining tasks để tạo opportunity update patch state.
-
-Kpatch CLI có `signal`, nhưng trên kernel hỗ trợ automatic signaling lệnh này có thể no-op vì kernel tự làm.
-
----
-
-## 4. Reverse/cancel và force: cơ chế cùng rủi ro
-
-**Cancel/reverse transition**
-
-Operator có thể đổi `enabled` về trạng thái ban đầu để reverse transition thay vì force.
-
-Nhưng reverse **cũng là transition**, nên vẫn phải monitor.
-
----
-
-**Force**
-
-`force` là last resort. Upstream docs cảnh báo force có thể ảnh hưởng future livepatching; sau force nên lên kế hoạch reboot và tránh tiếp tục apply thêm livepatch.
+### Mô hình tư duy 1 dòng (Mental Model):
 
 ```text
-normal transition = chờ task hội tụ an toàn
-force             = operator bỏ qua chờ hội tụ
+Function Redirect = "Mã mới nằm ở đâu?"
+Patch State       = "Task này được phép chạy mã nào?"
+Transition        = "Các Task đang trong quá trình hội tụ"
+Safe State        = "Thời điểm Task được phép đổi Patch State an toàn"
+Transition Stall  = "Có ít nhất 1 Task chưa chịu rời khỏi hàm bị vá"
 ```
 
----
-
-## 5. Mental model và checklist chẩn đoán
-
-**Mental model cuối cùng**
+### Checklist chẩn đoán sự cố cho Sysadmin / SRE:
 
 ```text
-function redirect = “đường nào có thể chạy”
-patch_state       = “task này được phép chạy đường nào”
-transition        = “các task đang hội tụ”
-safe point        = “điểm task được chuyển state an toàn”
-stall             = “ít nhất một task chưa hội tụ”
+[ ] Kiểm tra chiều chuyển đổi: Patching (0 -> 1) hay Unpatching (1 -> 0)?
+[ ] Xác định chính xác PID/TID của các Task chưa hội tụ.
+[ ] Kiểm tra Callstack của TID bị kẹt qua /proc/<PID>/task/<TID>/stack.
+[ ] Workload có thể tạm thời giảm tải (Quiesce) để giải phóng stack không?
+[ ] Đã thử kích hoạt Fake Signal (`kpatch signal` / `klp_send_signals`) chưa?
+[ ] Có nên chọn Reverse Transition (`enabled = 0`) thay vì dùng Force không?
 ```
 
 ---
 
-**Checklist debug transition**
+## 7. Tài liệu tham khảo
 
-```text
-[ ] patching hay unpatching?
-[ ] target state là 1 hay 0?
-[ ] transition đã kéo dài bao lâu?
-[ ] PID/TID nào khác target?
-[ ] stack của nó ở đâu?
-[ ] workload có thể quiesce không?
-[ ] kernel đã signal remaining tasks chưa?
-[ ] có nên reverse thay vì force không?
-```
-
----
-
-## 6. Tài liệu tham khảo
-
-- https://docs.kernel.org/livepatch/livepatch.html
-- https://docs.kernel.org/livepatch/reliable-stacktrace.html
+- [Linux Kernel Livepatch Consistency Model](https://docs.kernel.org/livepatch/livepatch.html#consistency-model)
+- [Reliable Stacktrace in Linux Kernel](https://docs.kernel.org/livepatch/reliable-stacktrace.html)
+- [System Call Exit & Kernel Transition Points](https://docs.kernel.org/x86/entry.html)
