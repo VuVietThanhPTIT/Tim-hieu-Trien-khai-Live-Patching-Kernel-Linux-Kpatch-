@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1450" height="640" viewBox="0 0 1450 640" role="img" aria-labelledby="title desc">
+  <title id="title">Luồng kiểm thử livepatch khi hai VM đang truyền dữ liệu</title>
+  <desc id="desc">Bốn giai đoạn: xác nhận baseline, khởi chạy ping và iperf3, load livepatch trên KVM host, rồi thu kết quả và kiểm tra trạng thái patch.</desc>
+
+  <rect x="15" y="15" width="1420" height="610" fill="#fffef0" stroke="#8c52ff" stroke-width="2"/>
+  <text x="725" y="62" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#333333">
+    Luồng kiểm thử thực tế của Lab 03
+  </text>
+
+  <!-- Giai đoạn 1 -->
+  <rect x="55" y="115" width="275" height="145" fill="#f0efff" stroke="#8c52ff" stroke-width="2"/>
+  <text x="192.5" y="151" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#333333">1. Xác nhận baseline</text>
+  <text x="192.5" y="184" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#444444">vm01, vm02: running</text>
+  <text x="192.5" y="211" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#444444">br0: UP</text>
+  <text x="192.5" y="238" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#444444">patch cũ đã unload</text>
+
+  <!-- Mũi tên 1 -->
+  <line x1="330" y1="187.5" x2="378" y2="187.5" stroke="#333333" stroke-width="3"/>
+  <polygon points="398,187.5 378,176.5 378,198.5" fill="#333333"/>
+
+  <!-- Giai đoạn 2 -->
+  <rect x="398" y="105" width="310" height="165" fill="#e9f2ff" stroke="#246bfe" stroke-width="2"/>
+  <text x="553" y="141" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#333333">2. Khởi chạy traffic</text>
+  <text x="553" y="177" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#444444">vm02: iperf3 server</text>
+  <text x="553" y="204" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#444444">vm01: ping mỗi 0,2 giây</text>
+  <text x="553" y="231" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#444444">vm01: TCP iperf3 trong 60 giây</text>
+  <text x="553" y="254" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#555555">10.10.10.11 → br0 → 10.10.10.12</text>
+
+  <!-- Mũi tên 2 -->
+  <line x1="708" y1="187.5" x2="756" y2="187.5" stroke="#333333" stroke-width="3"/>
+  <polygon points="776,187.5 756,176.5 756,198.5" fill="#333333"/>
+
+  <!-- Giai đoạn 3 -->
+  <rect x="776" y="115" width="275" height="145" fill="#fff1dc" stroke="#f28c00" stroke-width="2"/>
+  <text x="913.5" y="151" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#333333">3. Load trên KVM host</text>
+  <text x="913.5" y="187" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#444444">kpatch load</text>
+  <text x="913.5" y="214" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#444444">lab02_meminfo.ko</text>
+  <text x="913.5" y="241" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#444444">transition hoàn tất: 2 giây</text>
+
+  <!-- Mũi tên 3 -->
+  <line x1="1051" y1="187.5" x2="1099" y2="187.5" stroke="#333333" stroke-width="3"/>
+  <polygon points="1119,187.5 1099,176.5 1099,198.5" fill="#333333"/>
+
+  <!-- Giai đoạn 4 -->
+  <rect x="1119" y="105" width="276" height="165" fill="#e7f6ea" stroke="#4f9b62" stroke-width="2"/>
+  <text x="1257" y="141" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#333333">4. Thu và đối chiếu</text>
+  <text x="1257" y="177" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#444444">ping statistics</text>
+  <text x="1257" y="204" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#444444">iperf3 summary</text>
+  <text x="1257" y="231" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#444444">enabled = 1</text>
+  <text x="1257" y="254" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#444444">transition = 0</text>
+
+  <!-- Thanh mô tả traffic chạy xuyên suốt -->
+  <line x1="415" y1="315" x2="1375" y2="315" stroke="#246bfe" stroke-width="4"/>
+  <polygon points="1395,315 1375,304 1375,326" fill="#246bfe"/>
+  <text x="905" y="303" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#246bfe">
+    Ping và phiên TCP tiếp tục chạy trong lúc host load livepatch
+  </text>
+
+  <!-- Kết quả -->
+  <text x="725" y="379" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#333333">
+    Kết quả quan sát
+  </text>
+
+  <rect x="90" y="410" width="385" height="125" fill="#e7f6ea" stroke="#4f9b62" stroke-width="2"/>
+  <text x="282.5" y="448" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#333333">ICMP</text>
+  <text x="282.5" y="481" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" fill="#444444">300 gửi / 300 nhận · 0% packet loss</text>
+  <text x="282.5" y="510" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" fill="#444444">RTT lớn nhất: 2,991 ms</text>
+
+  <rect x="532.5" y="410" width="385" height="125" fill="#e9f2ff" stroke="#246bfe" stroke-width="2"/>
+  <text x="725" y="448" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#333333">TCP iperf3</text>
+  <text x="725" y="481" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" fill="#444444">60 giây · 39,5 GByte · 5,65 Gbit/s</text>
+  <text x="725" y="510" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" fill="#444444">13 retransmissions · không reset phiên</text>
+
+  <rect x="975" y="410" width="385" height="125" fill="#f0efff" stroke="#8c52ff" stroke-width="2"/>
+  <text x="1167.5" y="448" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#333333">Livepatch</text>
+  <text x="1167.5" y="481" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" fill="#444444">transition complete (2 seconds)</text>
+  <text x="1167.5" y="510" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" fill="#444444">enabled = 1 · transition = 0</text>
+
+  <rect x="190" y="570" width="1070" height="36" fill="#fff6d8" stroke="#c9a227" stroke-width="2"/>
+  <text x="725" y="594" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#333333">
+    Transition 2 giây là thời gian hội tụ patch state, không phải 2 giây network downtime
+  </text>
+</svg>

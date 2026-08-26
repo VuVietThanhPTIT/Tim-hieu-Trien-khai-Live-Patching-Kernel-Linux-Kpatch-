@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="790" viewBox="0 0 1500 790" role="img" aria-labelledby="title desc">
+  <title id="title">Luồng xử lý QEMU vCPU làm livepatch transition bị stalled</title>
+  <desc id="desc">Thứ tự xử lý gồm xác nhận blocker, thử cơ chế ít ảnh hưởng, quiesce workload có kiểm soát, xác nhận transition và khôi phục workload; nếu không thể xử lý thì hủy transition thay vì force.</desc>
+
+  <rect x="15" y="15" width="1470" height="760" fill="#fffef0" stroke="#8c52ff" stroke-width="2"/>
+  <text x="750" y="58" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#333333">
+    Xử lý stalled transition trên KVM host
+  </text>
+
+  <!-- Escalation ladder -->
+  <rect x="40" y="105" width="240" height="170" fill="#f0efff" stroke="#8c52ff" stroke-width="2"/>
+  <text x="160" y="142" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#333333">1. Xác nhận blocker</text>
+  <text x="160" y="178" text-anchor="middle" font-family="monospace" font-size="16" fill="#444444">transition = 1</text>
+  <text x="160" y="207" text-anchor="middle" font-family="monospace" font-size="16" fill="#444444">patch_state ≠ target</text>
+  <text x="160" y="236" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" fill="#555555">chụp stack, TID, wchan</text>
+  <text x="160" y="260" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" fill="#555555">xác định affected function</text>
+
+  <line x1="280" y1="190" x2="309" y2="190" stroke="#333333" stroke-width="3"/>
+  <polygon points="329,190 309,179 309,201" fill="#333333"/>
+
+  <rect x="329" y="105" width="240" height="170" fill="#e9f2ff" stroke="#246bfe" stroke-width="2"/>
+  <text x="449" y="142" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#333333">2. Ít ảnh hưởng nhất</text>
+  <text x="449" y="178" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#444444">chờ có giới hạn</text>
+  <text x="449" y="207" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#444444">automatic fake signal</text>
+  <text x="449" y="236" text-anchor="middle" font-family="monospace" font-size="16" fill="#246bfe">kpatch signal</text>
+  <text x="449" y="260" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" fill="#555555">theo dõi task có tiến triển</text>
+
+  <line x1="569" y1="190" x2="598" y2="190" stroke="#333333" stroke-width="3"/>
+  <polygon points="618,190 598,179 598,201" fill="#333333"/>
+
+  <rect x="618" y="95" width="264" height="190" fill="#fff1dc" stroke="#f28c00" stroke-width="2"/>
+  <text x="750" y="132" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#333333">3. Vẫn pending: quiesce</text>
+  <text x="750" y="168" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#444444">SLA zero / near-zero:</text>
+  <text x="750" y="195" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#f28c00">ưu tiên live migrate</text>
+  <text x="750" y="229" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#444444">SLA cho phép pause:</text>
+  <text x="750" y="256" text-anchor="middle" font-family="monospace" font-size="16" font-weight="700" fill="#f28c00">virsh suspend</text>
+  <text x="750" y="278" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#555555">xử lý từng blocker</text>
+
+  <line x1="882" y1="190" x2="911" y2="190" stroke="#333333" stroke-width="3"/>
+  <polygon points="931,190 911,179 911,201" fill="#333333"/>
+
+  <rect x="931" y="105" width="240" height="170" fill="#e7f6ea" stroke="#4f9b62" stroke-width="2"/>
+  <text x="1051" y="142" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#333333">4. Xác nhận hội tụ</text>
+  <text x="1051" y="178" text-anchor="middle" font-family="monospace" font-size="16" fill="#444444">enabled = 1</text>
+  <text x="1051" y="207" text-anchor="middle" font-family="monospace" font-size="16" fill="#444444">transition = 0</text>
+  <text x="1051" y="236" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" fill="#4f9b62">task states đã hội tụ</text>
+  <text x="1051" y="260" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" fill="#555555">load command đã return</text>
+
+  <line x1="1171" y1="190" x2="1200" y2="190" stroke="#333333" stroke-width="3"/>
+  <polygon points="1220,190 1200,179 1200,201" fill="#333333"/>
+
+  <rect x="1220" y="105" width="240" height="170" fill="#e9f2ff" stroke="#246bfe" stroke-width="2"/>
+  <text x="1340" y="142" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#333333">5. Khôi phục</text>
+  <text x="1340" y="178" text-anchor="middle" font-family="monospace" font-size="16" fill="#444444">virsh resume</text>
+  <text x="1340" y="207" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#4f9b62">stack đi replacement</text>
+  <text x="1340" y="236" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" fill="#555555">VM health · ping / TCP</text>
+  <text x="1340" y="260" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" fill="#555555">ghi pause và SLA impact</text>
+
+  <!-- Lab timeline -->
+  <text x="750" y="345" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#333333">
+    Timeline thực tế của Lab 05
+  </text>
+
+  <rect x="80" y="390" width="270" height="125" fill="#ffe9e9" stroke="#d9534f" stroke-width="2"/>
+  <text x="215" y="429" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="700" fill="#333333">Hai blocker</text>
+  <text x="215" y="465" text-anchor="middle" font-family="monospace" font-size="17" fill="#444444">transition=1</text>
+  <text x="215" y="495" text-anchor="middle" font-family="monospace" font-size="17" fill="#d9534f">vm01=0 · vm02=0</text>
+
+  <line x1="350" y1="452.5" x2="389" y2="452.5" stroke="#333333" stroke-width="3"/>
+  <polygon points="409,452.5 389,441.5 389,463.5" fill="#333333"/>
+
+  <rect x="409" y="390" width="270" height="125" fill="#fff1dc" stroke="#f28c00" stroke-width="2"/>
+  <text x="544" y="429" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="700" fill="#333333">Sau suspend VM01</text>
+  <text x="544" y="465" text-anchor="middle" font-family="monospace" font-size="17" fill="#444444">transition=1</text>
+  <text x="544" y="495" text-anchor="middle" font-family="monospace" font-size="17" fill="#f28c00">vm01=1 · vm02=0</text>
+
+  <line x1="679" y1="452.5" x2="718" y2="452.5" stroke="#333333" stroke-width="3"/>
+  <polygon points="738,452.5 718,441.5 718,463.5" fill="#333333"/>
+
+  <rect x="738" y="390" width="270" height="125" fill="#e7f6ea" stroke="#4f9b62" stroke-width="2"/>
+  <text x="873" y="429" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="700" fill="#333333">Sau suspend VM02</text>
+  <text x="873" y="465" text-anchor="middle" font-family="monospace" font-size="17" fill="#444444">transition=1</text>
+  <text x="873" y="495" text-anchor="middle" font-family="monospace" font-size="17" fill="#4f9b62">vm01=1 · vm02=1</text>
+
+  <line x1="1008" y1="452.5" x2="1047" y2="452.5" stroke="#333333" stroke-width="3"/>
+  <polygon points="1067,452.5 1047,441.5 1047,463.5" fill="#333333"/>
+
+  <rect x="1067" y="390" width="350" height="125" fill="#f0efff" stroke="#8c52ff" stroke-width="2"/>
+  <text x="1242" y="429" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="700" fill="#333333">Transition hoàn tất trong 3 giây</text>
+  <text x="1242" y="465" text-anchor="middle" font-family="monospace" font-size="17" fill="#444444">transition=0</text>
+  <text x="1242" y="495" text-anchor="middle" font-family="monospace" font-size="17" fill="#8c52ff">vm01=-1 · vm02=-1</text>
+
+  <!-- Fallback and warnings -->
+  <rect x="95" y="575" width="620" height="105" fill="#fff6d8" stroke="#c9a227" stroke-width="2"/>
+  <text x="405" y="611" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#333333">Nếu không thể quiesce an toàn</text>
+  <text x="405" y="645" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#444444">cancel / reverse transition → thu stack → review hoặc redesign patch</text>
+  <text x="405" y="669" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" fill="#555555">không để CVE rollout ở trạng thái half-transition</text>
+
+  <rect x="785" y="575" width="620" height="105" fill="#ffe9e9" stroke="#d9534f" stroke-width="2"/>
+  <text x="1095" y="611" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#333333">Không làm trên compute host</text>
+  <text x="1095" y="645" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#444444">không kill QEMU · không rmmod khi transition=1</text>
+  <text x="1095" y="669" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" fill="#d9534f">không force nếu chưa có patch author/vendor phê duyệt</text>
+
+  <rect x="215" y="715" width="1070" height="36" fill="#e9f2ff" stroke="#246bfe" stroke-width="2"/>
+  <text x="750" y="739" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#333333">
+    Suspend giải quyết blocker nhưng dừng CPU, disk và network I/O của guest trong khoảng pause
+  </text>
+</svg>

@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="790" viewBox="0 0 1500 790" role="img" aria-labelledby="title desc">
+  <title id="title">Vì sao QEMU vCPU làm livepatch transition bị stalled rồi đạt safe state</title>
+  <desc id="desc">QEMU gọi KVM RUN, vCPU thread ngủ khi kvm_vcpu_ioctl cũ còn trên stack nên giữ patch state 0. Fake signal đánh thức thread, thread đi qua kernel userspace boundary, chuyển sang patch state 1 và transition hoàn tất.</desc>
+
+  <rect x="15" y="15" width="1470" height="760" fill="#fffef0" stroke="#8c52ff" stroke-width="2"/>
+  <text x="750" y="60" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#333333">
+    QEMU vCPU làm transition stalled như thế nào?
+  </text>
+
+  <!-- Hàng 1: nguyên nhân stall -->
+  <rect x="55" y="120" width="280" height="145" fill="#e9f2ff" stroke="#246bfe" stroke-width="2"/>
+  <text x="195" y="157" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#333333">1. QEMU vCPU thread</text>
+  <text x="195" y="194" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" fill="#444444">userspace gọi ioctl</text>
+  <text x="195" y="224" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#246bfe">KVM_RUN</text>
+
+  <line x1="335" y1="192.5" x2="390" y2="192.5" stroke="#333333" stroke-width="3"/>
+  <polygon points="412,192.5 390,180.5 390,204.5" fill="#333333"/>
+
+  <rect x="412" y="105" width="350" height="175" fill="#f0efff" stroke="#8c52ff" stroke-width="2"/>
+  <text x="587" y="142" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#333333">2. Thread ngủ trong kernel</text>
+  <text x="587" y="178" text-anchor="middle" font-family="monospace" font-size="16" fill="#444444">kvm_vcpu_block()</text>
+  <text x="587" y="207" text-anchor="middle" font-family="monospace" font-size="16" fill="#444444">... vcpu_run()</text>
+  <text x="587" y="236" text-anchor="middle" font-family="monospace" font-size="16" font-weight="700" fill="#8c52ff">kvm_vcpu_ioctl() [kvm]</text>
+  <text x="587" y="263" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" fill="#555555">affected function vẫn còn trên stack</text>
+
+  <line x1="762" y1="192.5" x2="812" y2="192.5" stroke="#333333" stroke-width="3"/>
+  <polygon points="834,192.5 812,180.5 812,204.5" fill="#333333"/>
+
+  <polygon points="948,113 1062,192.5 948,272 834,192.5" fill="#fff1dc" stroke="#f28c00" stroke-width="2"/>
+  <text x="948" y="178" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#333333">Stack check</text>
+  <text x="948" y="204" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#444444">đã an toàn?</text>
+  <text x="948" y="229" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#d97706">Chưa</text>
+
+  <line x1="1062" y1="192.5" x2="1112" y2="192.5" stroke="#333333" stroke-width="3"/>
+  <polygon points="1134,192.5 1112,180.5 1112,204.5" fill="#333333"/>
+
+  <rect x="1134" y="112" width="310" height="161" fill="#ffe9e9" stroke="#d9534f" stroke-width="2"/>
+  <text x="1289" y="149" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#333333">3. Giữ trạng thái cũ</text>
+  <text x="1289" y="184" text-anchor="middle" font-family="monospace" font-size="17" fill="#444444">transition = 1</text>
+  <text x="1289" y="214" text-anchor="middle" font-family="monospace" font-size="17" fill="#444444">patch_state = 0</text>
+  <text x="1289" y="245" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#d9534f">ftrace tiếp tục chọn code cũ</text>
+
+  <!-- Đi xuống sau ngưỡng stalled -->
+  <line x1="1289" y1="273" x2="1289" y2="341" stroke="#333333" stroke-width="3"/>
+  <polygon points="1289,363 1277,341 1301,341" fill="#333333"/>
+  <text x="1310" y="322" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#d9534f">sau 15 giây</text>
+
+  <!-- Hàng 2: thoát stall, đi từ phải sang trái -->
+  <rect x="1134" y="363" width="310" height="145" fill="#fff1dc" stroke="#f28c00" stroke-width="2"/>
+  <text x="1289" y="400" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#333333">4. Automatic fake signal</text>
+  <text x="1289" y="437" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#444444">interrupt/wake pending task</text>
+  <text x="1289" y="467" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#444444">không inject signal payload</text>
+  <text x="1289" y="492" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" fill="#555555">QEMU không bị kill</text>
+
+  <line x1="1134" y1="435.5" x2="1076" y2="435.5" stroke="#333333" stroke-width="3"/>
+  <polygon points="1054,435.5 1076,423.5 1076,447.5" fill="#333333"/>
+
+  <rect x="714" y="363" width="340" height="145" fill="#e9f2ff" stroke="#246bfe" stroke-width="2"/>
+  <text x="884" y="400" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#333333">5. Tháo old kernel context</text>
+  <text x="884" y="437" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#444444">KVM_RUN thoát / task được wake</text>
+  <text x="884" y="467" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#444444">đi qua kernel → userspace boundary</text>
+  <text x="884" y="492" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" fill="#555555">affected frame cũ không còn active</text>
+
+  <line x1="714" y1="435.5" x2="656" y2="435.5" stroke="#333333" stroke-width="3"/>
+  <polygon points="634,435.5 656,423.5 656,447.5" fill="#333333"/>
+
+  <rect x="374" y="363" width="260" height="145" fill="#e7f6ea" stroke="#4f9b62" stroke-width="2"/>
+  <text x="504" y="400" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#333333">6. Đạt safe state</text>
+  <text x="504" y="437" text-anchor="middle" font-family="monospace" font-size="17" fill="#444444">patch_state = 1</text>
+  <text x="504" y="467" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#4f9b62">ftrace chọn replacement</text>
+  <text x="504" y="492" text-anchor="middle" font-family="monospace" font-size="15" fill="#555555">kvm_vcpu_ioctl [lab04_kvm]</text>
+
+  <line x1="374" y1="435.5" x2="316" y2="435.5" stroke="#333333" stroke-width="3"/>
+  <polygon points="294,435.5 316,423.5 316,447.5" fill="#333333"/>
+
+  <rect x="55" y="363" width="239" height="145" fill="#f0efff" stroke="#8c52ff" stroke-width="2"/>
+  <text x="174.5" y="400" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#333333">7. Hội tụ</text>
+  <text x="174.5" y="437" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#444444">mọi pending task = 1</text>
+  <text x="174.5" y="467" text-anchor="middle" font-family="monospace" font-size="17" fill="#444444">transition = 0</text>
+  <text x="174.5" y="492" text-anchor="middle" font-family="monospace" font-size="15" fill="#555555">patch_state → -1</text>
+
+  <!-- Giải thích ftrace -->
+  <rect x="95" y="575" width="1310" height="125" fill="#fff6d8" stroke="#c9a227" stroke-width="2"/>
+  <text x="750" y="613" text-anchor="middle" font-family="Arial, sans-serif" font-size="21" font-weight="700" fill="#333333">
+    Vì sao không “loạn ftrace” trong transition?
+  </text>
+  <text x="750" y="650" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" fill="#444444">
+    Cùng một ftrace/livepatch handler chọn code theo patch_state của current task:
+  </text>
+  <text x="750" y="681" text-anchor="middle" font-family="monospace" font-size="17" font-weight="700" fill="#333333">
+    state 0 → original function | state 1 → replacement function
+  </text>
+
+  <rect x="250" y="725" width="1000" height="31" fill="#ffe9e9" stroke="#d9534f" stroke-width="2"/>
+  <text x="750" y="747" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#333333">
+    Không rmmod khi transition=1; reverse cũng phải chờ mọi task đạt safe state theo chiều ngược
+  </text>
+</svg>
