@@ -2,11 +2,21 @@
 
 ## Mục lục
 
-1. [1. Bài toán, ràng buộc và yêu cầu kỹ thuật](#1-bài-toán-ràng-buộc-và-yêu-cầu-kỹ-thuật)
-2. [2. Kpatch là gì và nằm ở đâu trong hệ sinh thái livepatch](#2-kpatch-là-gì-và-nằm-ở-đâu-trong-hệ-sinh-thái-livepatch)
-3. [3. Phạm vi sử dụng, giới hạn và loại bản vá phù hợp](#3-phạm-vi-sử-dụng-giới-hạn-và-loại-bản-vá-phù-hợp)
-4. [4. Lựa chọn vận hành và tiêu chí đánh giá công cụ](#4-lựa-chọn-vận-hành-và-tiêu-chí-đánh-giá-công-cụ)
-5. [5. Tài liệu tham khảo](#5-tài-liệu-tham-khảo)
+1. [Thuật ngữ và từ viết tắt](#thuật-ngữ-và-từ-viết-tắt)
+2. [Bài toán, ràng buộc và yêu cầu kỹ thuật](#1-bài-toán-ràng-buộc-và-yêu-cầu-kỹ-thuật)
+3. [Kpatch là gì và nằm ở đâu trong hệ sinh thái livepatch](#2-kpatch-là-gì-và-nằm-ở-đâu-trong-hệ-sinh-thái-livepatch)
+4. [Phạm vi sử dụng, giới hạn và loại bản vá phù hợp](#3-phạm-vi-sử-dụng-giới-hạn-và-loại-bản-vá-phù-hợp)
+5. [Lựa chọn vận hành và tiêu chí đánh giá công cụ](#4-lựa-chọn-vận-hành-và-tiêu-chí-đánh-giá-công-cụ)
+6. [Tài liệu tham khảo](#5-tài-liệu-tham-khảo)
+
+---
+
+## Thuật ngữ và từ viết tắt
+
+| Thuật ngữ / Từ viết tắt | Tên đầy đủ | Giải thích ngắn gọn |
+|---|---|---|
+| **VM** | Virtual Machine | Máy ảo chạy trên hypervisor / compute host chứa workload của người dùng. |
+| **SLO** | Service Level Objective | Mục tiêu mức độ dịch vụ và cam kết thời gian hoạt động liên tục (uptime/availability). |
 
 ## Từ bài toán vận hành đến lựa chọn kpatch
 
@@ -30,7 +40,7 @@ vận hành/downtime      |
             phải giữ consistency
             + có rollback/fallback
 ```
-
+> Reboot ưu tiên tính đơn giản, trạng thái sạch và phạm vi cập nhật đầy đủ nhưng phải đánh đổi availability và chi phí vận hành. Livepatch ưu tiên availability bằng cách thay đổi code kernel khi hệ thống vẫn chạy, nhưng phải đánh đổi bằng complexity, yêu cầu compatibility nghiêm ngặt, giới hạn loại thay đổi có thể áp dụng và rủi ro transition.
 ## 1. Bài toán, ràng buộc và yêu cầu kỹ thuật
 
 **Bài toán gốc: kernel cần vá nhưng workload không được dừng**

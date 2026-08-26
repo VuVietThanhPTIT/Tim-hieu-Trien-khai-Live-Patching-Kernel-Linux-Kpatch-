@@ -1,265 +1,200 @@
-# 08 – Patchability, giới hạn và rủi ro
+# 08 – Patchability, Giới hạn Kỹ thuật và Quản trị Rủi ro Livepatch
 
 ## Mục lục
 
-1. [1. Khung đánh giá patchability từ source đến runtime](#1-khung-đánh-giá-patchability-từ-source-đến-runtime)
-2. [2. Các thay đổi có nguy cơ cao hoặc thường không phù hợp](#2-các-thay-đổi-có-nguy-cơ-cao-hoặc-thường-không-phù-hợp)
-3. [3. Cơ chế nâng cao: callbacks, shadow data và patch stacking](#3-cơ-chế-nâng-cao-callbacks-shadow-data-và-patch-stacking)
-4. [4. Rủi ro vận hành và cách hiểu đúng zero downtime](#4-rủi-ro-vận-hành-và-cách-hiểu-đúng-zero-downtime)
-5. [5. Go/No-Go gate trước khi triển khai](#5-gono-go-gate-trước-khi-triển-khai)
-6. [6. Tài liệu tham khảo](#6-tài-liệu-tham-khảo)
+1. [Thuật ngữ và từ viết tắt](#thuật-ngữ-và-từ-viết-tắt)
+2. [Khung đánh giá patchability từ source đến runtime](#1-khung-đánh-giá-patchability-từ-source-đến-runtime)
+3. [Các thay đổi có nguy cơ cao hoặc thường không phù hợp](#2-các-thay-đổi-có-nguy-cơ-cao-hoặc-thường-không-phù-hợp)
+4. [Cơ chế nâng cao: callbacks, shadow data và patch stacking](#3-cơ-chế-nâng-cao-callbacks-shadow-data-và-patch-stacking)
+5. [Rủi ro vận hành và cách hiểu đúng zero downtime](#4-rủi-ro-vận-hành-và-cách-hiểu-đúng-zero-downtime)
+6. [Go/No-Go gate trước khi triển khai](#5-gono-go-gate-trước-khi-triển-khai)
+7. [Tài liệu tham khảo](#6-tài-liệu-tham-khảo)
+
+---
+
+## Thuật ngữ và từ viết tắt
+
+| Thuật ngữ / Từ viết tắt | Tên đầy đủ | Giải thích ngắn gọn |
+|---|---|---|
+| **Patchability** | Livepatch Eligibility (Tính khả vá) | Mức độ phù hợp và tính an toàn của một source patch khi chuyển đổi sang dạng livepatch module. |
+| **Struct Layout** | Structure Memory Layout (Bố cục bộ nhớ của Struct) | Kích thước và thứ tự sắp xếp các trường dữ liệu trong một cấu trúc C trong RAM. |
+| **Lifecycle Callbacks** | Kpatch Hook Callbacks (Hàm lắng nghe vòng đời) | Các hàm callback chạy tại các thời điểm `pre_patch`, `post_patch`, `pre_unpatch`, `post_unpatch`. |
+| **ABI Mismatch** | Binary Interface Mismatch (Bất tương thích ABI nhị phân) | Sự không tương thích về chữ ký hàm, kiểu dữ liệu hoặc calling convention giữa các module. |
+
+---
 
 ## Khung quyết định patchability
 
 ```text
                SOURCE FIX
-                   |
-                   v
+                   │
+                   ▼
         Có biểu diễn bằng function
           replacement an toàn?
               /           \
             Có             Không
-            |                |
-            v                v
+            │                │
+            ▼                ▼
    Data semantics       NO-GO / redesign
    có tương thích?
        /      \
      Có        Không
-     |           |
-     v           v
+     │           │
+     ▼           ▼
  Binary/runtime     callback/shadow data
  kiểm tra được?     hoặc maintenance path
-     |
-     v
+     │
+     ▼
  staging + stress + transition test
-     |
-     v
+     │
+     ▼
         GO / NO-GO DECISION
 ```
 
+---
+
 ## 1. Khung đánh giá patchability từ source đến runtime
 
-**Câu hỏi quan trọng nhất trước khi build**
+### Câu hỏi quan trọng nhất trước khi biên dịch
 
-> **Fix này có thể được biểu diễn an toàn bằng function replacement trong một kernel đang có live state hay không?**
+> **Fix này có thể được biểu diễn một cách an toàn bằng phương pháp Function Replacement trong một Kernel đang có dữ liệu thực thi hay không?**
 
-Đây là câu hỏi semantic, không phải chỉ syntax/build.
-
----
-
-**Patchability assessment framework**
-
-**Layer A – Source change**
-
-- đổi function nào?
-- thêm helper nào?
-- đổi header/inline không?
-- đổi struct không?
-
-**Layer B – Data semantics**
-
-- old/new code có đọc cùng data theo cùng nghĩa không?
-- lifecycle của object có thay đổi không?
-- lock/invariant có đổi không?
-
-**Layer C – Binary reality**
-
-- kpatch-build phát hiện function nào?
-- có unexpected changes không?
-- có static key/jump label/special sections không?
-
-**Layer D – Runtime consistency**
-
-- old/new task state cùng tồn tại có an toàn không?
-- function có nằm trên long-running stack/hot path không?
+Đây là câu hỏi về mặt **Data Semantics (Ý nghĩa dữ liệu)** chứ không chỉ đơn thuần là cú pháp biên dịch (`kpatch-build SUCCESS`).
 
 ---
 
-**Thường thuận lợi**
+### Khung đánh giá phân tầng (Patchability Assessment Framework)
 
-| Loại fix | Vì sao dễ hơn |
+```text
+                         KHUNG ĐÁNH GIÁ PATCHABILITY 4 LỚP
+                                        │
+     ┌──────────────────┬───────────────┴───────────────┬──────────────────┐
+     ▼                  ▼                               ▼                  ▼
+ Layer A: Source    Layer B: Data Semantics          Layer C: Binary    Layer D: Runtime Consistency
+ - Thay đổi hàm nào? - Đọc cùng data không?          - Hàm nào đổi?     - Task cũ/mới cùng tồn tại
+ - Đổi struct không? - Lock/invariant có đổi không?  - Có static key?     có an toàn không?
+```
+
+- **Layer A (Source Change):** Kiểm tra xem file patch sửa đổi hàm nào, có thêm helper mới nào, có làm thay đổi header hay cấu trúc `struct` C hay không.
+- **Layer B (Data Semantics):** Kiểm tra xem mã cũ và mã mới có đọc/ghi dữ liệu theo cùng một ý nghĩa hay không. Thứ tự Lock Ordering có bị thay đổi không.
+- **Layer C (Binary Reality):** Kiểm tra kết quả trích xuất của `kpatch-build` (Changed Functions), xác nhận không có các thành phần nhị phân không hỗ trợ như Jump Labels / Static Keys.
+- **Layer D (Runtime Consistency):** Kiểm tra sự cùng tồn tại đồng thời của Task mang `state = 0` và Task mang `state = 1` trong giai đoạn Transition.
+
+---
+
+### Các loại bản vá thường dễ chấp nhận (GO Candidates)
+
+| Loại Fix | Vì sao dễ nạp Livepatch hơn? |
 |---|---|
-| Bounds/NULL check | Thay logic cục bộ. |
-| Permission validation | Thường không đổi data layout. |
-| Local calculation | Function replacement đủ biểu diễn fix. |
-| Error-path fix | Ít state migration. |
-| Helper mới + caller changed | Có thể đóng gói helper trong module. |
+| **Bounds / NULL Pointer Check** | Chỉ thay đổi logic kiểm tra điều kiện cục bộ bên trong hàm. |
+| **Permission Validation** | Thêm kiểm tra quyền mà không làm thay đổi bố cục dữ liệu (Data Layout). |
+| **Local Calculation Fix** | Thay đổi công thức tính toán cục bộ bên trong thân hàm. |
+| **Error-Path Fix** | Sửa đường xử lý lỗi không làm ảnh hưởng tới vòng đời của Object. |
 
 ---
 
 ## 2. Các thay đổi có nguy cơ cao hoặc thường không phù hợp
 
-**Struct layout change**
+```text
+                           6 BẪY NGUY HIỂM KHI LIVEPATCH
+                                         │
+    ┌──────────────┬──────────────┼──────────────┬──────────────┬──────────────┐
+    ▼              ▼              ▼              ▼              ▼              ▼
+1. Struct Layout 2. Data Semantic 3. ABI Change  4. Init Code   5. Static Keys 6. Lock Order
+ (Đổi kích thước (Thay đổi ý     (Đổi tham số   (Hàm __init    (Jump Labels   (Đổi thứ tự
+  struct C)       nghĩa biến)    hàm gốc)       đã giải phóng) tự sửa mã)     khóa lock)
+```
+
+### 1. Struct Layout Change (Thay đổi bố cục cấu trúc C)
 
 ```c
 struct session {
-  int state;
-+ u64 generation;
+    int state;
++   u64 generation;  // THÊM TRƯỜNG MỚI!
 };
 ```
+- **Hậu quả:** Các Object `struct session` đã được cấp phát trong RAM trước khi nạp patch vẫn mang kích thước cũ. Mã mới đọc/ghi trường `generation` sẽ ghi đè sang vùng nhớ lân cận (Memory Corruption).
+- **Quy tắc:** NO-GO mặc định, trừ khi redesign bản vá bằng **Shadow Variables**.
 
-Object đã tồn tại trước patch không tự tăng kích thước trong RAM.
+### 2. Data Semantic Change (Thay đổi ý nghĩa dữ liệu)
+- **Hậu quả:** Ngay cả khi kích thước `struct` không đổi, việc thay đổi ý nghĩa của biến (ví dụ cờ `state = 1` từ "Pending" đổi thành "Active") sẽ khiến Task chạy mã cũ và Task chạy mã mới trong giai đoạn Transition hiểu sai ý nghĩa dữ liệu của nhau.
 
-New code đọc `generation` có thể đọc garbage/out-of-bounds.
+### 3. Function Prototype / ABI Change (Thay đổi chữ ký hàm)
+- **Hậu quả:** Nếu chữ ký hàm thay đổi (`foo(int)` -> `foo(int, long)`), các hàm gọi (Callers) chưa được vá vẫn truyền tham số theo chuẩn ABI cũ, gây hỏng thanh ghi Stack.
 
-→ No-go mặc định, trừ khi redesign patch bằng shadow variable/callback hoặc cơ chế khác đã phân tích kỹ.
+### 4. Initialization Code (`__init` functions)
+- **Hậu quả:** Các hàm mang thuộc tính `__init` chỉ thực thi 1 lần lúc boot và bộ nhớ của chúng đã bị giải phóng. Vá các hàm `__init` sẽ không có bất kỳ hiệu lực nào.
 
----
+### 5. Static Keys / Jump Labels (Tự sửa mã máy runtime)
+- **Hậu quả:** Các nhánh điều kiện tối ưu bằng `static_branch_likely()` bị `kpatch-build` chặn lại vì mã nhị phân nhảy không thể tự động đồng bộ với trạng thái `static_key` gốc của Kernel.
 
-**Data semantic change**
-
-Nguy hiểm ngay cả khi struct không đổi.
-
-Ví dụ field `state` cũ nghĩa A/B, code mới đổi semantics thành A/B/C. Task old và new cùng truy cập object có thể hiểu khác nhau.
-
-Build có thể vẫn `SUCCESS`, nên đây là pitfall cần human reasoning.
-
----
-
-**Prototype / ABI change**
-
-Nếu function signature đổi, caller đã compile sẵn theo ABI cũ.
-
-Không nên coi whole-function redirect là giải pháp tự động cho ABI mismatch.
-
----
-
-**Init code**
-
-Fix ở module/device initialization có thể không có tác dụng đầy đủ nếu init đã chạy từ boot/load trước đó.
-
-Function replacement không “replay” initialization state.
-
----
-
-**Inline function**
-
-Inline code đã được copy vào caller. Patch helper inline có thể làm nhiều caller đổi binary.
-
-Phải audit changed function list.
-
----
-
-**Assembly / `notrace` / ftrace limitations**
-
-Livepatch dựa trên ftrace function entry, nên function không traceable theo required model là no-go hoặc cần architecture-specific solution.
-
----
-
-**Static keys / jump labels / static calls**
-
-Đây là code runtime-specialized. Kpatch Patch Author Guide có hướng dẫn riêng vì copy binary patched function sang module có thể không phản ánh runtime static-key state.
-
-Lab đã gặp exact build gate này ở `kvm_arch_vcpu_ioctl_run()`.
-
----
-
-**Locking change**
-
-Nếu patch thay lock order hoặc chia critical section thành semantics mới, old/new task cùng tồn tại có thể tạo deadlock/invariant mismatch.
-
-Cần vẽ lock graph trước/sau patch.
-
----
-
-**Shared tables / per-CPU data / hardware state**
-
-Function replacement không tự cập nhật data đã khởi tạo ở runtime. Các fix thay register programming hoặc table schema cần callback/reinit strategy.
+### 6. Lock Order Change (Thay đổi thứ tự khóa)
+- **Hậu quả:** Thay đổi thứ tự acquire locks giữa các hàm. Trong giai đoạn Transition, một Task giữ Lock A gọi Lock B (mã cũ) gặp Task khác giữ Lock B gọi Lock A (mã mới) sẽ gây ra **Deadlock hệ thống ngay lập tức**.
 
 ---
 
 ## 3. Cơ chế nâng cao: callbacks, shadow data và patch stacking
 
-**Shadow Variables (`klp_shadow_*`)**:
-Để khắc phục hạn chế không được làm thay đổi `struct` layout trong RAM, Linux Livepatch cung cấp API **Shadow Variables**:
-- `klp_shadow_alloc(obj, id, size, gfp_flags, ctor, data)`: Động gán một vùng nhớ mới (shadow memory) với một object cũ đã tồn tại trong RAM dựa trên con trỏ `obj` và identifier `id`.
-- `klp_shadow_get(obj, id)`: Trả về con trỏ tới vùng nhớ shadow tương ứng với `obj`.
-- `klp_shadow_free(obj, id, dtor)`: Giải phóng vùng nhớ shadow khi object bị destroy.
+### 3.1. Shadow Variables (`klp_shadow_*`)
 
-**Lifecycle Callbacks**:
-Kpatch cung cấp các macro đăng ký callback để thực thi logic chuẩn bị hoặc dọn dẹp bộ nhớ trước/sau khi nạp hoặc gỡ patch:
-- `pre_patch`: Chạy trước khi đăng ký/kích hoạt patch (ví dụ: khởi tạo shadow variables, kiểm tra điều kiện phần cứng).
-- `post_patch`: Chạy ngay sau khi transition hoàn tất (`transition = 0`).
-- `pre_unpatch` / `post_unpatch`: Chạy tương ứng khi tiến hành disable/unload patch.
+Để giải quyết hạn chế không được làm thay đổi `struct` layout trong RAM, Linux Livepatch cung cấp API **Shadow Variables**:
 
----
+- **`klp_shadow_alloc(obj, id, size, gfp_flags, ctor, data)`:** Động gán một vùng nhớ mới (Shadow Memory) với một Object cũ đã tồn tại trong RAM dựa trên con trỏ `obj` và identifier `id`.
+- **`klp_shadow_get(obj, id)`:** Trả về con trỏ tới vùng nhớ Shadow tương ứng với `obj`.
+- **`klp_shadow_free(obj, id, dtor)`:** Giải phóng vùng nhớ Shadow khi Object bị hủy.
 
-**Patch stacking và cumulative patch**
+### 3.2. Lifecycle Callbacks (Hàm lắng nghe vòng đời)
 
-Nhiều livepatch chồng nhau làm reasoning khó hơn. Kpatch guide khuyến nghị patch mới nên cumulative/superset khi hệ thống đã được patched, tận dụng replace behavior khi phù hợp.
+Kpatch cung cấp các macro đăng ký callback để thực thi logic chuẩn bị hoặc dọn dẹp bộ nhớ tại các thời điểm nhạy cảm:
+
+- **`pre_patch`:** Chạy trước khi đăng ký/kích hoạt patch (ví dụ: khởi tạo Shadow Variables, kiểm tra điều kiện phần cứng).
+- **`post_patch`:** Chạy ngay sau khi transition hoàn tất (`transition = 0`).
+- **`pre_unpatch` / `post_unpatch`:** Chạy tương ứng khi tiến hành disable/unload patch.
+
+### 3.3. Patch Stacking và Cumulative Patch Strategy
+
+Khi nạp nhiều Livepatch Modules chồng lên nhau (Patch Stacking), việc theo dõi và kiểm thử trở nên phức tạp. 
+
+Kpatch khuyến nghị chiến lược **Cumulative Patch (Bản vá tổng hợp tích lũy)**: Bản vá mới chứa toàn bộ các fix từ trước tới nay để thay thế hoàn toàn (`replace = 1`) các module patch lẻ cũ.
 
 ---
 
 ## 4. Rủi ro vận hành và cách hiểu đúng zero downtime
 
-**Build success chưa đủ**
+### Định nghĩa "Zero Downtime" có trách nhiệm
 
-Ba lớp review bắt buộc:
+> **Tuyên bố chuẩn xác:** Livepatch giúp áp dụng bản vá an ninh mà **không cần Reboot máy chủ Host** và không làm gián đoạn dịch vụ trong điều kiện Transition hội tụ thành công. Livepatch không phải là một phép thuật đảm bảo Downtime bằng 0 tuyệt đối trong mọi tình huống.
 
-```text
-1. Source review
-2. Binary/livepatch review
-3. Runtime validation
-```
+### Bảng quản trị rủi ro Livepatch (Risk Matrix)
 
----
-
-**Định nghĩa “zero downtime” có trách nhiệm**
-
-Nên nói:
-
-> Không reboot host và không quan sát service interruption vượt quá độ phân giải phép đo trong successful transition.
-
-Không nên nói:
-
-> Kpatch đảm bảo mọi patch có downtime bằng 0 tuyệt đối.
-
----
-
-**Risk matrix**
-
-| Risk | Xác suất | Impact | Mitigation |
+| Loại rủi ro | Xác suất | Mức độ ảnh hưởng | Biện pháp giảm thiểu (Mitigation) |
 |---|---|---|---|
-| Wrong target kernel | Trung bình | Cao | exact source/vmlinux/vermagic gate |
-| Semantic data mismatch | Thấp–TB | Rất cao | human review/callback/shadow design |
-| Transition stall | TB | TB–cao | monitor + quiesce/signal/reverse |
-| Kernel panic | Thấp | Rất cao | staging/canary/rollback |
-| Patch stacking complexity | TB theo thời gian | Cao | cumulative patch + reboot debt policy |
-| Unsigned artifact | TB ở lab | Policy-dependent | signing/trust pipeline |
+| **Lệch Kernel Target** | Trung bình | **Rất cao** | Phải dùng exact `vmlinux`, `config` và kiểm tra `vermagic`. |
+| **Sai lệch Data Semantics** | Thấp | **Cực kỳ cao** | Bắt buộc Human Code Review kỹ lưỡng & dùng Shadow Data. |
+| **Transition Stall** | Trung bình | Trung bình | Theo dõi sysfs, dùng Signal Kick hoặc Quiesce Workload. |
+| **Kernel Panic** | Thấp | **Cực kỳ cao** | Kiểm thử bắt buộc trên Staging / Canary Deployment. |
+| **Phức tạp Patch Stacking** | Trung bình | Cao | Sử dụng Cumulative Patch & chính sách Reboot định kỳ. |
 
 ---
 
 ## 5. Go/No-Go gate trước khi triển khai
 
-**Go / No-Go checklist**
-
-**GO candidate**
-
 ```text
-[ ] localized function logic
-[ ] no incompatible struct layout change
-[ ] no incompatible ABI change
-[ ] old/new semantics can coexist
-[ ] changed function list understood
-[ ] runtime path testable
-[ ] rollback/fallback exists
-```
-
-**NO-GO / escalation**
-
-```text
-[ ] unclear data migration
-[ ] hardware re-init required
-[ ] unsupported jump-label/static-call issue unresolved
-[ ] critical locking semantics unclear
-[ ] patch touches ftrace/livepatch internals unsafely
-[ ] target binary cannot be reproduced/matched
+                   CHECKLIST ĐÁNH GIÁ GO / NO-GO PRODUCTION
+                                       │
+         ┌─────────────────────────────┴─────────────────────────────┐
+         ▼                                                           ▼
+   TIÊU CHÍ ĐẠT (GO CANDIDATE)                              TIÊU CHÍ CHẶN (NO-GO CRITERIA)
+ [ ] Sửa đổi logic hàm cục bộ an toàn.                    [ ] Đổi Struct Layout mà không dùng Shadow.
+ [ ] Không làm thay đổi Struct Layout / ABI.              [ ] Thay đổi thứ tự Lock Ordering (Rủi ro Deadlock).
+ [ ] Đã Review kỹ lưỡng changed functions.               [ ] Xuất hiện cảnh báo Jump Labels chưa sửa.
+ [ ] Quy trình Rollback / Unload đã test tốt.             [ ] Chưa kiểm thử thành công trên Staging VM.
 ```
 
 ---
 
 ## 6. Tài liệu tham khảo
 
-- https://github.com/dynup/kpatch/blob/master/doc/patch-author-guide.md
-- https://docs.kernel.org/livepatch/livepatch.html
-- https://docs.kernel.org/livepatch/api.html
+- [kpatch Patch Author Guide](https://github.com/dynup/kpatch/blob/master/doc/patch-author-guide.md)
+- [Linux Kernel Livepatch Architecture Documentation](https://docs.kernel.org/livepatch/livepatch.html)
+- [Linux Livepatch API Documentation](https://docs.kernel.org/livepatch/api.html)
