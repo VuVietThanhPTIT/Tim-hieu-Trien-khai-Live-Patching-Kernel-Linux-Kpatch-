@@ -492,7 +492,157 @@ VM migration
 
 ---
 
-## 19. Audit findings
+## 19. Testcase bổ sung: MMU-specific unpatching stall
+
+Testcase bổ sung được thực hiện để kiểm chứng trực tiếp trường hợp patch nằm
+trong `arch/x86/kvm/mmu/mmu.c`, trong khi một QEMU vCPU thread chưa quay về
+QEMU userspace và patched function vẫn còn trên kernel stack.
+
+### 19.1 Controlled patch
+
+Function được patch:
+
+```text
+kvm_mmu_page_fault()
+```
+
+Patch chỉ giữ TID `10380` (`VM1 CPU 0/KVM`) trong function khoảng 25 giây.
+Vòng `msleep(20)` nhường scheduler nhưng vẫn giữ MMU stack frame, tránh
+busy-spin khóa cứng CPU host:
+
+```c
+if (unlikely(current->pid == 10380)) {
+        lab4d_deadline = jiffies + msecs_to_jiffies(25000);
+        pr_info("lab4d: enter kvm_mmu_page_fault tid=%d\n", current->pid);
+        while (time_before(jiffies, lab4d_deadline))
+                msleep(20);
+        pr_info("lab4d: exit kvm_mmu_page_fault tid=%d\n", current->pid);
+}
+```
+
+Đây là controlled fault injection phục vụ lab, không phải patch production.
+
+### 19.2 Build gate
+
+```text
+arch/x86/kvm/mmu/mmu.o: changed function: kvm_mmu_page_fault
+Patched objects: arch/x86/kvm/kvm.ko
+Building patch module: lab4d-mmu-stall.ko
+SUCCESS
+```
+
+Artifact:
+
+```text
+Module   : lab4d_mmu_stall
+Vermagic : 6.8.0-134-generic SMP preempt mod_unload modversions
+SHA-256  : 2a9c718daadc13a285677e2d75695a1009dff5892c6282db7016ef879b7ba958
+```
+
+ELF chứa `.kpatch.funcs`, `__versions` và
+`.klp.rela.kvm..text.kvm_mmu_page_fault`.
+
+### 19.3 Workload và trigger condition
+
+VM1 chạy memory workload pin vào guest CPU 0:
+
+```bash
+taskset -c 0 stress-ng \
+  --vm 1 \
+  --vm-bytes 2G \
+  --vm-keep \
+  --timeout 60s
+```
+
+Chỉ bắt đầu unpatch sau khi kernel xác nhận:
+
+```text
+kvm: lab4d: enter kvm_mmu_page_fault tid=10380
+```
+
+### 19.4 Evidence stalled transition
+
+Kpatch CLI:
+
+```text
+disabling patch module: lab4d_mmu_stall
+waiting (up to 15 seconds) for patch transition to complete...
+patch transition has stalled!
+waiting (up to 60 seconds) for patch transition to complete...
+transition complete (6 seconds)
+unloading patch module: lab4d_mmu_stall
+```
+
+Tổng thời gian unload khoảng 22 giây. Kernel log ghi nhận:
+
+```text
+starting unpatching transition
+signaling remaining tasks
+kvm: lab4d: exit kvm_mmu_page_fault tid=10380
+unpatching complete
+```
+
+Trong chiều unpatching, target state là `0`. Monitor root ghi nhận khoảng 20
+giây liên tục:
+
+```text
+enabled=0 transition=1
+tid10380=1
+tid10381=0
+tid10434=0
+tid10435=0
+```
+
+Khi patched function trả về, TID `10380` chuyển `1 → 0` và transition hoàn
+tất.
+
+Kernel stack của blocker:
+
+```text
+msleep
+kvm_mmu_page_fault [lab4d_mmu_stall]
+handle_ept_violation [kvm_intel]
+__vmx_handle_exit [kvm_intel]
+vcpu_enter_guest [kvm]
+vcpu_run [kvm]
+kvm_arch_vcpu_ioctl_run [kvm]
+kvm_vcpu_ioctl [kvm]
+```
+
+Evidence này liên kết trực tiếp:
+
+```text
+QEMU vCPU thread
+    ↓
+KVM_RUN / EPT violation
+    ↓
+kvm_mmu_page_fault() còn trên stack
+    ↓
+TID 10380 giữ patch_state=1
+    ↓
+unpatching transition bị stalled
+```
+
+### 19.5 Recovery và trạng thái cuối
+
+Không dùng `force`, không reboot, không kill QEMU và không migrate VM.
+Transition tự hội tụ khi controlled function trả về.
+
+```text
+Livepatch module      : đã unload
+Livepatch sysfs entry : đã biến mất
+VM1 / VM2             : running
+Ping VM1 / VM2        : 0% packet loss
+Kernel Oops/BUG/lockup: không có
+```
+
+Testcase này chứng minh MMU-specific stall ở **chiều unpatching**. Nó không
+được dùng để khẳng định patching stall hoặc suy rộng rằng mọi patch MMU đều
+gây stall.
+
+---
+
+## 20. Audit findings
 
 ### Finding 1
 Không phải function nào compile được cũng livepatch được. `kvm_arch_vcpu_ioctl_run()` bị kpatch-build từ chối do 19 unsupported jump labels.
@@ -516,9 +666,15 @@ patch_state=1
 ```
 là task chưa quay về unpatched state.
 
+### Finding 5
+MMU workload hoặc function activity không tự động gây stall. Testcase bổ sung
+chỉ stall khi `kvm_mmu_page_fault()` thực sự còn trên vCPU stack trong lúc
+unpatching; đây là evidence trực tiếp cho mối quan hệ giữa call stack, safe
+switching opportunity và per-task consistency.
+
 ---
 
-## 20. Checklist Lab 4
+## 21. Checklist Lab 4
 
 | Hạng mục | Trạng thái |
 |---|---|
@@ -538,19 +694,25 @@ là task chưa quay về unpatched state.
 | Bắt per-task `patch_state` | PASS |
 | Quan sát `1 → 0` | PASS |
 | Unpatching complete | PASS |
+| Controlled patch trực tiếp trong `mmu.c` | PASS |
+| Bắt stack `kvm_mmu_page_fault` của blocker | PASS |
+| MMU-specific unpatching stall | PASS |
+| MMU-specific patching stall | CHƯA KIỂM CHỨNG |
+| Không dùng force/reboot/kill QEMU | PASS |
 | vm1 sau lab | running |
 | vm2 sau lab | running |
 
 ---
 
-## 21. Kết luận
+## 22. Kết luận
 
 Lab 4 đã tái hiện thành công **stalled livepatch transition** trên KVM host.
 
-Patch tác động vào:
+Hai testcase đã tái hiện stall bằng các target:
 
 ```text
-kvm_vcpu_ioctl()
+Lab 4A: kvm_vcpu_ioctl()
+Lab 4D: kvm_mmu_page_fault()
 ```
 
 Trong khi hai VM chạy CPU-bound workload, kernel ghi nhận transition kéo dài và phải:
@@ -588,6 +750,11 @@ sau đó:
 ```text
 unpatching complete
 ```
+
+Trong testcase MMU bổ sung, stack trực tiếp chứng minh TID `10380` đang nằm
+trong `kvm_mmu_page_fault()` trên đường EPT violation/KVM_RUN. TID này giữ
+`patch_state=1` trong khi ba vCPU khác đã về target `0`, rồi chỉ chuyển `1 → 0`
+khi function trả về.
 
 Hai VM vẫn `running`.
 
