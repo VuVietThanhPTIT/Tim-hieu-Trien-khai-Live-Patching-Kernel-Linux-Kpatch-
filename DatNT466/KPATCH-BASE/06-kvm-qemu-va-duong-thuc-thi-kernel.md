@@ -198,6 +198,10 @@ Giải pháp chính là **Signal Kick (Fake Signal)** qua 4 bước khép kín:
   - QEMU Userspace nhận mã `KVM_EXIT_INTR`, biết đây chỉ là tín hiệu ngắt nhẹ, nó không ngắt VM mà chỉ đơn giản quay lại đầu vòng lặp `while(1)` và gọi lại `ioctl(vcpu_fd, KVM_RUN)`.
   - Từ lần gọi `ioctl` tiếp theo này, vCPU thread đã mang `patch_state = 1` và chạy hoàn toàn trên mã máy mới thông qua `ftrace redirect`! Máy ảo Guest hoàn toàn không hề nhận ra mình vừa trải qua một đợt Livepatch!
 
+<<<<<<< HEAD
+=======
+> Signal không làm patch an toàn; signal chỉ đưa task tới nơi mà livepatch consistency model có thể chuyển nó an toàn.Ý là sau khi thoát khỏi điểm nghẽn thì vẫn phải qua cơ chế kiểm tra.
+>>>>>>> 1b4bab12916601a56d38689bee50af4844b3a1d2
 ---
 
 ## 5. Thực hành chẩn đoán: Phân tích bài lab KVM và Checklist Audit

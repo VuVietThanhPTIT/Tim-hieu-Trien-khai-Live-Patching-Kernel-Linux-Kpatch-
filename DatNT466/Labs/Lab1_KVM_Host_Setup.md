@@ -106,7 +106,6 @@ crw-rw---- 1 root kvm 10, 232 Aug 24 16:08 /dev/kvm
 
 Kết luận: nested virtualization đã được expose cho instance và host có thể dùng KVM.
 
-> Ảnh minh họa: chèn screenshot output của 3 lệnh trên nếu cần nghiệm thu bằng hình ảnh.
 
 ---
 
