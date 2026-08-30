@@ -15,7 +15,7 @@ sysctl kernel.panic_on_rcu_stall
 
 - Module `stall_sim.ko` được sửa timeout an toàn lên **120 giây** (dễ quan sát/test hơn), build lại (`make`) trước khi nạp.
 - test
-![[Pasted image 20260830183239.png]]
+![Pasted image 20260830183239](./img/Pasted_image_20260830183239.png)
 ## 2. Vòng 5 — Cơ Chế `virsh suspend` / `resume`
 
 ### 2.1. Câu hỏi thực nghiệm
@@ -189,9 +189,9 @@ EOF
 
 
 
-![[Pasted image 20260830200517.png]]
+![Pasted image 20260830200517](./img/Pasted_image_20260830200517.png)
 
-![[Pasted image 20260830200732.png]]
+![Pasted image 20260830200732](./img/Pasted_image_20260830200732.png)
 ### 2.4. Kết quả thực nghiệm thực tế
 
 ```text
@@ -371,6 +371,7 @@ chmod +x ~/lab5_approach_B.sh
 sudo ~/lab5_approach_B.sh
 # chạy khi đã stress VM, chạy stall_sim, và đã kpatch load
 ```
+![Pasted image 20260830202835](./img/Pasted_image_20260830202835.png)
 
 ### 3.4. Đánh giá — có thay thế được `force` không
 

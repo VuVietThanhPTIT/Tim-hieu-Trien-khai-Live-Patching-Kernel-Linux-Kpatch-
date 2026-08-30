@@ -1,4 +1,4 @@
-# Lab 2 — kpatch-build noble.patch cho kernel host Lab 1
+﻿# Lab 2 — kpatch-build noble.patch cho kernel host Lab 1
 
 **Mục tiêu:** Dùng `kpatch-build` + `noble.patch` (vá 2 hàm `kvm_mmu_get_child_sp()` và `__link_shadow_page()` trong `arch/x86/kvm/mmu/mmu.c`) để sinh ra 1 file `.ko` có thể live-patch vào đúng kernel đang chạy trên host Lab 1.
 
@@ -16,7 +16,7 @@
 grep -E "CONFIG_LIVEPATCH|CONFIG_FUNCTION_TRACER|CONFIG_DYNAMIC_FTRACE|CONFIG_KALLSYMS_ALL|CONFIG_DEBUG_INFO" \
   /boot/config-$(uname -r)
 ```
-![](img/Pasted%20image%2020260825212632.png)
+![](./img/Pasted_image_20260825212632.png)
 
 | Flag | Dùng để làm gì | Vì sao thiếu là hỏng |
 |---|---|---|
@@ -109,7 +109,7 @@ sudo apt install ubuntu-dev-tools
 pull-lp-ddebs linux-image-unsigned-6.8.0-134-generic 6.8.0-134.134 noble ( auto tìm dbgsym mà k cần gõ)
 ```
 - Lúc đầu em cũng làm thế do tai
-![[Pasted image 20260830155620.png]]
+![Pasted image 20260830155620](./img/Pasted_image_20260830155620.png)
   1. Vào `https://launchpad.net/ubuntu/+source/linux/6.8.0-134.134`
   2. Chọn build kiến trúc `amd64`, vào mục **Downloads**
   3. Tải file `linux-image-unsigned-6.8.0-134-generic-dbgsym_6.8.0-134.134_amd64.ddeb` (link thật host trên `launchpadlibrarian.net`)
@@ -272,24 +272,24 @@ cat /sys/kernel/livepatch/livepatch_noble/enabled
 - kpatch chính thức (dynup/kpatch), GitHub
 - Launchpad — trang build lịch sử của package `linux`: https://launchpad.net/ubuntu/+source/linux (tra đúng version cần, vào Downloads để lấy link `.ddeb` trên `launchpadlibrarian.net`)
 
-![](img/Pasted%20image%2020260824084656.png)
+![](./img/Pasted_image_20260824084656.png)
 
 ---
 
 - Lỗi do không bản patch cho 1 kernel version khác :v
-![](img/Pasted%20image%2020260824110159.png)
+![](./img/Pasted_image_20260824110159.png)
 
 
 ## Làm lại từ đầu , chuyển về kernel version trước 
 
-![](img/Pasted%20image%2020260824111139.png)
+![](./img/Pasted_image_20260824111139.png)
 
-![](img/Pasted%20image%2020260824133846.png)
+![](./img/Pasted_image_20260824133846.png)
 ---
 
-![](img/Pasted%20image%2020260824150112.png)
+![](./img/Pasted_image_20260824150112.png)
 
-![](img/Pasted%20image%2020260824215353.png)
+![](./img/Pasted_image_20260824215353.png)
 
 # Tham khảo 
 - [Everything You Wanted to Know About Kernel Livepatch in Ubuntu · Matthew Ruffell](https://ruffell.nz/programming/writeups/2020/04/20/everything-you-wanted-to-know-about-kernel-livepatch-in-ubuntu.html)

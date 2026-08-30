@@ -1,4 +1,4 @@
----
+﻿---
 aliases:
 ---
 
@@ -10,14 +10,14 @@ aliases:
 ```
 uname -r
 ```
-![Pasted image 20260822125131](img/Pasted%20image%2020260822125131.png)
+![Pasted image 20260822125131](./img/Pasted_image_20260822125131.png)
 
 - [How to change linux kernel versions.md](https://gist.github.com/zrruziev/b6ecb011953cf2d93f923bc0f6a06261)
 Gõ lệnh để xem các kernel version có thể tải về  , không tìm thấy bản như requirement 
 ```
 apt-cache search linux-image- | grep generic
 ```
-![Pasted image 20260822175825](img/Pasted%20image%2020260822175825.png)
+![Pasted image 20260822175825](./img/Pasted_image_20260822175825.png)
 
 
 - Trong phiên bản noble 24.04 kernel version là 6.x do vậy ta cần apt pinning ( tránh sau bị tải bị đè thư viện ) để tải về bản  5.15.0 của jammy 
@@ -51,7 +51,7 @@ sudo apt update
 ```
 
 - Set độ ưu tiên chỉ riêng cho các gói liên quan đến **Kernel** (`linux-image`, `linux-headers`, `linux-modules`).
-![Pasted image 20260822183412](img/Pasted%20image%2020260822183412.png)
+![Pasted image 20260822183412](./img/Pasted_image_20260822183412.png)
 
 - Đã tìm được đúng version cần chỉ định sau đó cài đặt
 ```
@@ -70,7 +70,7 @@ sudo reboot
 ```
 
 - Kiểm tra xem đã đúng version chưa 
-![Pasted image 20260822184353](img/Pasted%20image%2020260822184353.png)
+![Pasted image 20260822184353](./img/Pasted_image_20260822184353.png)
 
 **Bước 2 :** Tạo bridge network ( mạng của 2 con VM cô lập với  host )
 Cài trước cái gói cần thiết
@@ -133,7 +133,7 @@ sudo cloud-localds /var/lib/libvirt/images/vm2-seed.img /tmp/vm2-user-data.yaml
 ```
 
 - Kiểm tra địa chỉ IP của 2 VM 
-![Pasted image 20260822210540](img/Pasted%20image%2020260822210540.png)
+![Pasted image 20260822210540](./img/Pasted_image_20260822210540.png)
 
 - SSH vào 2 vm và và cài đặt gói iperf3 , trước đó thì bật ip forward trên host , và add default route thêm dns trên 2 VM 
 
@@ -146,29 +146,29 @@ sudo apt install -y iperf3
 iperf3 -s
 ```
 
-![Pasted image 20260822213752](img/Pasted%20image%2020260822213752.png)
+![Pasted image 20260822213752](./img/Pasted_image_20260822213752.png)
 
 - Đo luồng từ VM1 -> VM2 
 ```
 iperf3 -c 192.168.100.51 -t 30 -i 2
 ```
-![Pasted image 20260822214340](img/Pasted%20image%2020260822214340.png)
+![Pasted image 20260822214340](./img/Pasted_image_20260822214340.png)
 - Đo ngược từ VM2 -> VM1 bằng thêm -R 
 ```
 iperf3 -c 192.168.100.51 -t 30 -R
 ```
-![Pasted image 20260822214428](img/Pasted%20image%2020260822214428.png)
+![Pasted image 20260822214428](./img/Pasted_image_20260822214428.png)
 
 - test ping từvm1 sang vm2 
-![Pasted image 20260822220646](img/Pasted%20image%2020260822220646.png)
+![Pasted image 20260822220646](./img/Pasted_image_20260822220646.png)
 
 
 # Cập nhật lại kết quả của kernel version `6.8.0-134.134`.
 - Đo luồng từ VM1 -> VM2 
-![](img/Pasted%20image%2020260824132548.png)
+![](./img/Pasted_image_20260824132548.png)
 
 - Đo ngược từ VM2 -> VM1 bằng thêm -R 
-![](img/Pasted%20image%2020260824132718.png)
+![](./img/Pasted_image_20260824132718.png)
 
 - test ping từ vm1 sang vm2 
-![](img/Pasted%20image%2020260824133036.png)
+![](./img/Pasted_image_20260824133036.png)

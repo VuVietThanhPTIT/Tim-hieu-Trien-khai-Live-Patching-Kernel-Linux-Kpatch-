@@ -127,6 +127,6 @@ sudo kill "$DMESG_PID" 2>/dev/null
 ---
 
 
-![](img/Pasted%20image%2020260824223837.png)![](img/Pasted%20image%2020260824223934.png)
+![](./img/Pasted_image_20260824223837.png)![](./img/Pasted_image_20260824223934.png)
 
-![](../lab4/img/Pasted%20image%2020260824224233.png)
+![](./img/Pasted_image_20260824224233.png)

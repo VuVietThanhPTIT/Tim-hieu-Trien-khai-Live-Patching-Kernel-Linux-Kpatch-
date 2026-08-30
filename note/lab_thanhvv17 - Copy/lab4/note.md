@@ -262,12 +262,12 @@ Log thực tế cho thấy chính `kpatch` tool đã tự thực hiện đúng p
 
 
 
-![](img/Pasted%20image%2020260825153441.png)
+![](./img/Pasted_image_20260825153441.png)
 	 
 
-![](img/Pasted%20image%2020260825153441.png)
+![](./img/Pasted_image_20260825153441.png)
 
-![](img/Pasted%20image%2020260825153454.png)
+![](./img/Pasted_image_20260825153454.png)
 
 
 ### Tham khảo : 

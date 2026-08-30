@@ -1,4 +1,4 @@
-![](img/fig1_tcp_throughput_comparison.png)![](img/fig2_tcp_retransmissions.png)![](img/fig3_udp_loss_and_jitter.png)![](img/fig4_ping_latency_tail.png)
+![](./img/fig1_tcp_throughput_comparison.png)![](./img/fig2_tcp_retransmissions.png)![](./img/fig3_udp_loss_and_jitter.png)![](./img/fig4_ping_latency_tail.png)
 
 
 
