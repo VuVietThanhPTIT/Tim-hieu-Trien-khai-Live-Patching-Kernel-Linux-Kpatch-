@@ -1,3 +1,6 @@
+---
+aliases:
+---
 # Báo Cáo Thực Nghiệm Lab 5: Đánh Giá Các Cơ Chế Can Thiệp Khi Livepatch Transition Bị Kẹt
 
 ---
