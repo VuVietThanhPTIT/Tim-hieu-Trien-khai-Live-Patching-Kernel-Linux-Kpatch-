@@ -1,4 +1,4 @@
-﻿# Lab 2 — kpatch-build noble.patch cho kernel host Lab 1
+# Lab 2 — kpatch-build noble.patch cho kernel host Lab 1
 
 **Mục tiêu:** Dùng `kpatch-build` + `noble.patch` (vá 2 hàm `kvm_mmu_get_child_sp()` và `__link_shadow_page()` trong `arch/x86/kvm/mmu/mmu.c`) để sinh ra 1 file `.ko` có thể live-patch vào đúng kernel đang chạy trên host Lab 1.
 
